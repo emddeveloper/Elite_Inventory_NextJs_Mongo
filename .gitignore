@@ -10,12 +10,12 @@ out/
 build/
 dist/
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Environment variables will add leter
+#.env
+#.env.local
+#.env.development.local
+#.env.test.local
+#.env.production.local
 
 # Vercel
 .vercel
