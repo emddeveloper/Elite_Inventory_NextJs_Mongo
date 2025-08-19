@@ -1,8 +1,13 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI);
+// Normalize URI similar to server code (force IPv4 for localhost on Windows)
+const rawMongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/inventory-management';
+const MONGODB_URI = rawMongoUri.startsWith('mongodb://localhost')
+  ? rawMongoUri.replace('mongodb://localhost', 'mongodb://127.0.0.1')
+  : rawMongoUri;
+const maskedUri = MONGODB_URI.includes('@') ? MONGODB_URI.replace(/\/\/.*@/, '//***@') : MONGODB_URI;
+console.log('🔗 Using MongoDB URI:', maskedUri);
 
 // Sample data
 const sampleProducts = [
@@ -112,41 +117,47 @@ const sampleProducts = [
   }
 ];
 
-// Import the Product model
-const Product = require('../models/Product');
+// NOTE: Avoid importing TS models here. We'll use direct collection access.
 
 async function seedData() {
   try {
+    // Connect to Mongo first
+    await mongoose.connect(MONGODB_URI);
+    console.log('✅ Connected to MongoDB');
+
+    // Ensure unique index on sku
+    await mongoose.connection.db.collection('products').createIndex({ sku: 1 }, { unique: true }).catch(() => {});
+
     // Clear existing products
-    await Product.deleteMany({});
+    await mongoose.connection.db.collection('products').deleteMany({});
     console.log('Cleared existing products');
 
     // Insert sample products
-    const products = await Product.insertMany(sampleProducts);
-    console.log(`Inserted ${products.length} sample products`);
+    const insertResult = await mongoose.connection.db.collection('products').insertMany(sampleProducts);
+    const insertedIds = Object.values(insertResult.insertedIds);
+    console.log(`Inserted ${insertedIds.length} sample products`);
 
     // Update some products to have different creation dates for chart data
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
     
-    for (let i = 0; i < products.length; i++) {
+    for (let i = 0; i < insertedIds.length; i++) {
       const randomDate = new Date(
         sixMonthsAgo.getTime() + Math.random() * (now.getTime() - sixMonthsAgo.getTime())
       );
-      
-      await Product.findByIdAndUpdate(products[i]._id, {
-        createdAt: randomDate,
-        updatedAt: randomDate
-      });
+      await mongoose.connection.db.collection('products').updateOne(
+        { _id: insertedIds[i] },
+        { $set: { createdAt: randomDate, updatedAt: randomDate } }
+      );
     }
 
     console.log('Updated creation dates for chart data');
     console.log('Database seeded successfully!');
     
-    mongoose.connection.close();
+    await mongoose.connection.close();
   } catch (error) {
     console.error('Error seeding database:', error);
-    mongoose.connection.close();
+    await mongoose.connection.close();
   }
 }
 

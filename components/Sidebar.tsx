@@ -19,6 +19,8 @@ import Link from 'next/link'
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   { name: 'Products', href: '/products', icon: CubeIcon },
+  { name: 'Sales', href: '/sales', icon: ChartBarIcon },
+  { name: 'Transactions', href: '/transactions', icon: DocumentTextIcon },
   { name: 'Inventory', href: '/inventory', icon: DocumentTextIcon },
   { name: 'Suppliers', href: '/suppliers', icon: TruckIcon },
   { name: 'Customers', href: '/customers', icon: UsersIcon },

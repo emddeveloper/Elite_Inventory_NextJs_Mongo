@@ -65,11 +65,66 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await dbConnect()
-    
-    const body = await request.json()
-    
-    // Check if SKU already exists
-    const existingProduct = await Product.findOne({ sku: body.sku })
+
+    let body: any
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON body' },
+        { status: 400 }
+      )
+    }
+
+    // Normalize and validate input
+    const allowedCategories = ['Electronics', 'Clothing', 'Books', 'Home & Garden', 'Sports', 'Other']
+
+    const normalized = {
+      name: typeof body.name === 'string' ? body.name.trim() : '',
+      sku: typeof body.sku === 'string' ? body.sku.trim() : '',
+      description: typeof body.description === 'string' ? body.description.trim() : '',
+      category: typeof body.category === 'string' ? body.category.trim() : '',
+      price: Number(body.price),
+      cost: Number(body.cost),
+      quantity: body.quantity !== undefined ? Number(body.quantity) : 0,
+      minQuantity: body.minQuantity !== undefined ? Number(body.minQuantity) : 10,
+      location: typeof body.location === 'string' ? body.location.trim() : '',
+      image: body.image ? String(body.image) : undefined,
+      tags: Array.isArray(body.tags)
+        ? body.tags.map((t: any) => String(t).trim()).filter(Boolean)
+        : (typeof body.tags === 'string' ? body.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : []),
+      isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
+      supplier: body.supplier || undefined
+    }
+
+    // Basic field checks
+    const missing: string[] = []
+    if (!normalized.name) missing.push('name')
+    if (!normalized.sku) missing.push('sku')
+    if (!normalized.description) missing.push('description')
+    if (!normalized.category) missing.push('category')
+    if (!Number.isFinite(normalized.price)) missing.push('price')
+    if (!Number.isFinite(normalized.cost)) missing.push('cost')
+    if (!Number.isFinite(normalized.quantity)) missing.push('quantity')
+    if (!Number.isFinite(normalized.minQuantity)) missing.push('minQuantity')
+    if (!normalized.location) missing.push('location')
+
+    if (missing.length) {
+      return NextResponse.json(
+        { error: 'Missing or invalid fields', details: missing },
+        { status: 400 }
+      )
+    }
+
+    if (!allowedCategories.includes(normalized.category)) {
+      return NextResponse.json(
+        { error: 'Invalid category', details: [normalized.category] },
+        { status: 400 }
+      )
+    }
+
+    // Unique SKU check
+    const existingProduct = await Product.findOne({ sku: normalized.sku })
     if (existingProduct) {
       return NextResponse.json(
         { error: 'SKU already exists' },
@@ -77,13 +132,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const product = await Product.create(body)
-    
+    const product = await Product.create(normalized)
     return NextResponse.json(product, { status: 201 })
   } catch (error: any) {
     console.error('Error creating product:', error)
-    
-    if (error.name === 'ValidationError') {
+
+    // Duplicate key error safety (in case of race condition)
+    if (error?.code === 11000 || error?.name === 'MongoServerError') {
+      return NextResponse.json(
+        { error: 'SKU already exists' },
+        { status: 400 }
+      )
+    }
+
+    if (error?.name === 'ValidationError') {
       const errors = Object.values(error.errors).map((err: any) => err.message)
       return NextResponse.json(
         { error: 'Validation failed', details: errors },
