@@ -7,7 +7,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed": "node scripts/seed-data.js",
+    "test:dashboard": "node scripts/test-dashboard.js",
+    "verify:fallback": "node scripts/verify-fallback.js"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",

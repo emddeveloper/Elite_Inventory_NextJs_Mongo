@@ -1,64 +1,239 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   CubeIcon, 
   CurrencyDollarIcon, 
   ExclamationTriangleIcon,
   ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon
+  ArrowTrendingDownIcon,
+  WifiIcon,
+  WifiIcon as WifiOffIcon
 } from '@heroicons/react/24/outline'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
-
-const stats = [
-  { name: 'Total Products', stat: '1,234', icon: CubeIcon, change: '+12%', changeType: 'increase' },
-  { name: 'Total Value', stat: '$45,678', icon: CurrencyDollarIcon, change: '+8.2%', changeType: 'increase' },
-  { name: 'Low Stock Items', stat: '23', icon: ExclamationTriangleIcon, change: '-5%', changeType: 'decrease' },
-  { name: 'Monthly Sales', stat: '$12,345', icon: ArrowTrendingUpIcon, change: '+15.3%', changeType: 'increase' },
-]
-
-const chartData = [
-  { name: 'Jan', sales: 4000, inventory: 2400 },
-  { name: 'Feb', sales: 3000, inventory: 1398 },
-  { name: 'Mar', sales: 2000, inventory: 9800 },
-  { name: 'Apr', sales: 2780, inventory: 3908 },
-  { name: 'May', sales: 1890, inventory: 4800 },
-  { name: 'Jun', sales: 2390, inventory: 3800 },
-]
-
-const pieData = [
-  { name: 'Electronics', value: 400, color: '#3B82F6' },
-  { name: 'Clothing', value: 300, color: '#10B981' },
-  { name: 'Books', value: 200, color: '#F59E0B' },
-  { name: 'Home & Garden', value: 100, color: '#EF4444' },
-]
-
-const recentActivity = [
-  { id: 1, action: 'Product added', item: 'iPhone 15 Pro', time: '2 minutes ago', type: 'add' },
-  { id: 2, action: 'Stock updated', item: 'MacBook Air', time: '15 minutes ago', type: 'update' },
-  { id: 3, action: 'Low stock alert', item: 'AirPods Pro', time: '1 hour ago', type: 'alert' },
-  { id: 4, action: 'Product sold', item: 'iPad Air', time: '2 hours ago', type: 'sale' },
-  { id: 5, action: 'Supplier order', item: 'Samsung Galaxy', time: '3 hours ago', type: 'order' },
-]
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { DashboardData } from '@/types/dashboard'
+import { fetchDashboardData, getDataStatusIndicator } from '@/lib/dashboard-utils'
 
 export default function Dashboard() {
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [dataSource, setDataSource] = useState<'api' | 'fallback'>('api')
+
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true)
+      console.log('🔄 Dashboard: Starting data load...')
+      const result = await fetchDashboardData()
+      
+      if (result.data) {
+        console.log('✅ Dashboard: Data loaded successfully from', result.source)
+        setData(result.data)
+        setDataSource(result.source)
+        setError(null)
+      } else {
+        console.error('❌ Dashboard: Failed to load data:', result.error)
+        setError(result.error || 'Failed to load dashboard data')
+      }
+    } catch (err) {
+      console.error('❌ Dashboard: Unexpected error during data load:', err)
+      setError('An unexpected error occurred while loading dashboard data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const retryApiConnection = async () => {
+    try {
+      setLoading(true)
+      const result = await fetchDashboardData()
+      
+      if (result.data) {
+        setData(result.data)
+        setDataSource(result.source)
+        setError(null)
+      } else {
+        setError(result.error || 'Failed to load dashboard data')
+      }
+    } catch (err) {
+      console.error('Retry failed:', err)
+      setError('Failed to reconnect to API')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    const statusIndicator = getDataStatusIndicator(dataSource)
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Welcome back! Here's what's happening with your inventory today.
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-500">
+              {statusIndicator.label}
+            </span>
+            <div className="p-2 text-gray-400">
+              {statusIndicator.icon === 'wifi' ? (
+                <WifiIcon className="h-5 w-5" />
+              ) : (
+                <WifiOffIcon className="h-5 w-5" />
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !data) {
+    const statusIndicator = getDataStatusIndicator(dataSource)
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Welcome back! Here's what's happening with your inventory today.
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-500">
+              {statusIndicator.label}
+            </span>
+            <div className="p-2 text-gray-400">
+              {statusIndicator.icon === 'wifi' ? (
+                <WifiIcon className="h-5 w-5" />
+              ) : (
+                <WifiOffIcon className="h-5 w-5" />
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="text-center py-12">
+            <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-red-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Error loading dashboard</h3>
+            <p className="mt-1 text-sm text-gray-500">{error}</p>
+            <div className="mt-6 space-x-3">
+              <button
+                onClick={retryApiConnection}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Try API again
+              </button>
+              <button
+                onClick={loadDashboardData}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Reload Data
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!data) {
+    return null
+  }
+
+  const statusIndicator = getDataStatusIndicator(dataSource)
+
+  // Transform category stats for pie chart
+  const pieData = data.categoryStats.map((category, index) => {
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4']
+    return {
+      name: category._id,
+      value: category.count,
+      color: colors[index % colors.length]
+    }
+  })
+
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Welcome back! Here's what's happening with your inventory today.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Welcome back! Here's what's happening with your inventory today.
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <span className="text-sm text-gray-500">
+            {statusIndicator.label}
+          </span>
+          <button
+            onClick={retryApiConnection}
+            className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              dataSource === 'api'
+                ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+            }`}
+          >
+            {dataSource === 'api' ? (
+              <>
+                <WifiIcon className="h-4 w-4 mr-2" />
+                Live
+              </>
+            ) : (
+              <>
+                <WifiOffIcon className="h-4 w-4 mr-2" />
+                Demo
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Data source indicator */}
+      {dataSource === 'fallback' && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Demo Mode Active
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  The dashboard is currently displaying demo data. The API may be unavailable or there might be connectivity issues.
+                  Click the "Live" button to try connecting to the API again.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((item) => (
+        {data.stats.map((item) => (
           <div key={item.name} className="card">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <item.icon className="h-6 w-6 text-gray-400" aria-hidden="true" />
+                {item.name === 'Total Products' && <CubeIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
+                {item.name === 'Total Value' && <CurrencyDollarIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
+                {item.name === 'Low Stock Items' && <ExclamationTriangleIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
+                {item.name === 'Monthly Sales' && <ArrowTrendingUpIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
@@ -93,13 +268,18 @@ export default function Dashboard() {
           <h3 className="text-lg font-medium text-gray-900 mb-4">Sales & Inventory Trends</h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
+              <BarChart data={data.chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip />
-                <Bar dataKey="sales" fill="#3B82F6" />
-                <Bar dataKey="inventory" fill="#10B981" />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    name === 'sales' ? `$${value.toLocaleString()}` : value.toLocaleString(),
+                    name === 'sales' ? 'Sales ($)' : 'Inventory (units)'
+                  ]}
+                />
+                <Bar dataKey="sales" fill="#3B82F6" name="sales" />
+                <Bar dataKey="inventory" fill="#10B981" name="inventory" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -125,7 +305,12 @@ export default function Dashboard() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    `${value} products`,
+                    'Count'
+                  ]}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -137,10 +322,10 @@ export default function Dashboard() {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
         <div className="flow-root">
           <ul role="list" className="-mb-8">
-            {recentActivity.map((activity, activityIdx) => (
+            {data.recentActivity.map((activity, activityIdx) => (
               <li key={activity.id}>
                 <div className="relative pb-8">
-                  {activityIdx !== recentActivity.length - 1 ? (
+                  {activityIdx !== data.recentActivity.length - 1 ? (
                     <span
                       className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
                       aria-hidden="true"
