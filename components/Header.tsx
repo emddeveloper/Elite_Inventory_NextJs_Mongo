@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Menu, Transition } from '@headlessui/react'
 import { Bars3Icon, BellIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { UserCircleIcon } from '@heroicons/react/24/solid'
@@ -10,6 +10,29 @@ function classNames(...classes: string[]) {
 }
 
 export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => void }) {
+  const [lowStock, setLowStock] = useState<any[]>([])
+  const [openNotifs, setOpenNotifs] = useState(false)
+
+  // Poll low-stock products every 10s
+  useEffect(() => {
+    let mounted = true
+    async function fetchLow() {
+      try {
+        const res = await fetch('/api/products?lowStock=true&limit=50')
+        if (!res.ok) return
+        const data = await res.json()
+        if (mounted) setLowStock(Array.isArray(data.products) ? data.products : [])
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchLow()
+    const iv = setInterval(fetchLow, 10000)
+    return () => { mounted = false; clearInterval(iv) }
+  }, [])
+
+  const notifCount = lowStock.length
+
   return (
     <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
       <button type="button" className="-m-2.5 p-2.5 text-gray-700 lg:hidden" onClick={() => setSidebarOpen(true)}>
@@ -38,10 +61,41 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
           />
         </form>
         <div className="flex items-center gap-x-4 lg:gap-x-6">
-          <button type="button" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
-            <span className="sr-only">View notifications</span>
-            <BellIcon className="h-6 w-6" aria-hidden="true" />
-          </button>
+          <div className="relative">
+            <button type="button" onClick={() => setOpenNotifs(!openNotifs)} className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
+              <span className="sr-only">View notifications</span>
+              <BellIcon className="h-10 w-8" aria-hidden="true" />
+            </button>
+            {notifCount > 0 && (
+              <span className="absolute -top-0 -right-0 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-600 text-white text-xs">{notifCount}</span>
+            )}
+
+            {openNotifs && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border rounded shadow-lg z-20">
+                <div className="p-3 border-b font-semibold">Low Stock Products ({notifCount})</div>
+                <div className="max-h-64 overflow-auto">
+                  {lowStock.length === 0 ? (
+                    <div className="p-3 text-sm text-gray-500">No low stock items</div>
+                  ) : (
+                    lowStock.map((p:any) => (
+                      <div key={p._id} className="p-3 flex items-center justify-between hover:bg-gray-50">
+                        <div>
+                          <div className="font-medium text-sm">{p.name}</div>
+                          <div className="text-xs text-gray-500">SKU: {p.sku} • Qty: {p.quantity}</div>
+                        </div>
+                        <div>
+                          <a href={`/products`} className="text-blue-600 text-sm">Open</a>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="p-2 text-center border-t">
+                  <button onClick={() => { setOpenNotifs(false) }} className="text-sm text-gray-600">Close</button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Separator */}
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" aria-hidden="true" />

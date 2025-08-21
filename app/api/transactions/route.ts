@@ -64,7 +64,9 @@ export async function POST(request: NextRequest) {
 				return NextResponse.json({ error: `Insufficient stock for ${prod.name}` }, { status: 400 })
 			}
 			const unitPrice = Number(prod.price)
+			const gstPercent = Number(prod.gstPercent ?? 5)
 			const lineTotal = unitPrice * qty
+			const lineTax = lineTotal * (gstPercent / 100)
 			subtotal += lineTotal
 			finalizedItems.push({
 				productId: prod._id,
@@ -72,7 +74,9 @@ export async function POST(request: NextRequest) {
 				name: prod.name,
 				unitPrice,
 				quantity: qty,
-				lineTotal
+				lineTotal,
+				gstPercent,
+				lineTax
 			})
 		}
 

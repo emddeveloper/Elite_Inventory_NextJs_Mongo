@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const search = searchParams.get('search') || ''
     const category = searchParams.get('category') || ''
+  const lowStock = searchParams.get('lowStock') === 'true'
     const sortBy = searchParams.get('sortBy') || 'createdAt'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
 
@@ -29,6 +30,12 @@ export async function GET(request: NextRequest) {
 
     if (category) {
       query.category = category
+    }
+
+    if (lowStock) {
+      // Match documents where quantity <= minQuantity
+      // Use $expr to compare fields
+      query.$expr = { $lte: ['$quantity', '$minQuantity'] }
     }
 
     // Build sort object
@@ -84,6 +91,7 @@ export async function POST(request: NextRequest) {
       sku: typeof body.sku === 'string' ? body.sku.trim() : '',
       description: typeof body.description === 'string' ? body.description.trim() : '',
       category: typeof body.category === 'string' ? body.category.trim() : '',
+  gstPercent: body.gstPercent !== undefined ? Number(body.gstPercent) : 5,
       price: Number(body.price),
       cost: Number(body.cost),
       quantity: body.quantity !== undefined ? Number(body.quantity) : 0,
@@ -104,6 +112,7 @@ export async function POST(request: NextRequest) {
     if (!normalized.description) missing.push('description')
     if (!normalized.category) missing.push('category')
     if (!Number.isFinite(normalized.price)) missing.push('price')
+  if (!Number.isFinite(normalized.gstPercent)) missing.push('gstPercent')
     if (!Number.isFinite(normalized.cost)) missing.push('cost')
     if (!Number.isFinite(normalized.quantity)) missing.push('quantity')
     if (!Number.isFinite(normalized.minQuantity)) missing.push('minQuantity')
@@ -132,7 +141,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const product = await Product.create(normalized)
+  const product = await Product.create(normalized)
     return NextResponse.json(product, { status: 201 })
   } catch (error: any) {
     console.error('Error creating product:', error)

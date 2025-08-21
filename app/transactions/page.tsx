@@ -31,15 +31,22 @@ export default function TransactionsPage() {
 	}
 
 	const download = async (id: string, name: string) => {
-		const pdf = await fetch(`/api/transactions/${id}/invoice`)
-		const blob = await pdf.blob()
-		const url = URL.createObjectURL(blob)
-		const a = document.createElement('a')
-		a.href = url
-		a.download = `${name}.pdf`
-		a.click()
-		URL.revokeObjectURL(url)
+		setDownloadLoading((prev) => ({ ...prev, [id]: true }))
+		try {
+			const pdf = await fetch(`/api/transactions/${id}/invoice`)
+			const blob = await pdf.blob()
+			const url = URL.createObjectURL(blob)
+			const a = document.createElement('a')
+			a.href = url
+			a.download = `${name}.pdf`
+			a.click()
+			URL.revokeObjectURL(url)
+		} finally {
+			setDownloadLoading((prev) => ({ ...prev, [id]: false }))
+		}
 	}
+
+	const [downloadLoading, setDownloadLoading] = useState<Record<string, boolean>>({})
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -73,7 +80,16 @@ export default function TransactionsPage() {
 												<td className="table-cell">{`${Number(tx.total ?? 0).toFixed(2)}`}</td>
 												<td className="table-cell">{new Date(tx.createdAt).toLocaleString()}</td>
 												<td className="table-cell">
-													<button onClick={() => download(tx._id, tx.invoiceNumber)} className="btn-secondary">Download Invoice</button>
+													<button onClick={() => download(tx._id, tx.invoiceNumber)} className="btn-secondary" disabled={!!downloadLoading[tx._id]}>
+														{downloadLoading[tx._id] ? (
+															<span className="inline-flex items-center gap-2">
+																<svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+																<span>Downloading...</span>
+															</span>
+														) : (
+															<span>Download Invoice</span>
+														)}
+													</button>
 												</td>
 											</tr>
 										))}

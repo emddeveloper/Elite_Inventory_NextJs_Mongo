@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
 import Transaction from '@/models/Transaction'
+import Product from '@/models/Product'
 export const runtime = 'nodejs'
 
 export async function GET(
@@ -70,31 +71,42 @@ export async function GET(
 		const invoiceNumber = tx.invoiceNumber || 'S01'
 		const invoiceDate = tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : '01 May 2024'
 
-		// Build tax summary grouped by HSN and rate (dynamic CGST/SGST calculation)
+		// Fetch related products for items so we can use product.gstPercent when item lacks gst info
+		const productIdsForInvoice = items.map((it: any) => String(it.productId)).filter(Boolean)
+		const productsForInvoice = productIdsForInvoice.length ? await Product.find({ _id: { $in: productIdsForInvoice } }) : []
+		const productMapForInvoice = new Map(productsForInvoice.map((p: any) => [String(p._id), p]))
+
+		// Build tax summary grouped by HSN and rate (prices are inclusive of GST)
 		const taxMap = new Map<string, { hsn: string; taxable: number; rate: number; cgst: number; sgst: number; totalTax: number }>()
 		for (const it of items) {
 			const hsn = String((it && it.hsn) || '-')
 			const qty = Number((it && it.quantity) || 0)
-			const ratePerUnit = Number((it && it.unitPrice) || 0)
-			const lineTotal = Number((it && it.lineTotal) ?? (qty * ratePerUnit))
-			// Support per-item tax rate fields if present; default to 5%
-			const ratePercent = Number((it && (it.gstPercent ?? it.taxRate)) ?? 5)
+			const ratePerUnitIncl = Number((it && it.unitPrice) || 0) // price includes GST
+			const lineTotalIncl = Number((it && it.lineTotal) ?? (qty * ratePerUnitIncl))
+			// Determine GST percent: priority -> item.gstPercent -> product.gstPercent -> default 5%
+			const prod = it && it.productId ? productMapForInvoice.get(String(it.productId)) : undefined
+			const ratePercent = Number((it && (it.gstPercent ?? it.taxRate)) ?? (prod && prod.gstPercent) ?? 5)
+			// Convert inclusive price to taxable amount: taxable = inclusive / (1 + r/100)
+			const taxableForLine = lineTotalIncl / (1 + ratePercent / 100)
+			const totalTaxForLine = lineTotalIncl - taxableForLine
+			const cgstForLine = totalTaxForLine / 2
+			const sgstForLine = totalTaxForLine / 2
 			const key = `${hsn}|${ratePercent}`
 			const existing = taxMap.get(key)
 			if (existing) {
-				existing.taxable += lineTotal
-				existing.totalTax = existing.taxable * (existing.rate / 100)
-				existing.cgst = existing.totalTax / 2
-				existing.sgst = existing.totalTax / 2
+				existing.taxable += taxableForLine
+				existing.cgst += cgstForLine
+				existing.sgst += sgstForLine
+				existing.totalTax += totalTaxForLine
 				taxMap.set(key, existing)
 			} else {
 				const entry = {
 					hsn,
-					taxable: lineTotal,
+					taxable: taxableForLine,
 					rate: ratePercent,
-					cgst: (lineTotal * (ratePercent / 100)) / 2,
-					sgst: (lineTotal * (ratePercent / 100)) / 2,
-					totalTax: lineTotal * (ratePercent / 100)
+					cgst: cgstForLine,
+					sgst: sgstForLine,
+					totalTax: totalTaxForLine
 				}
 				taxMap.set(key, entry)
 			}
@@ -110,10 +122,10 @@ export async function GET(
 			aggCgst += e.cgst
 			aggSgst += e.sgst
 			aggTotalTax += e.totalTax
-			return `<tr><td>${escapeHtml(e.hsn)}</td><td>Rs. ${e.taxable.toFixed(2)}</td><td>${(e.rate/2).toFixed(2)}%</td><td>Rs. ${e.cgst.toFixed(2)}</td><td>${(e.rate/2).toFixed(2)}%</td><td>Rs. ${e.sgst.toFixed(2)}</td><td>Rs. ${e.totalTax.toFixed(2)}</td></tr>`
+			return `<tr><td>${escapeHtml(e.hsn)}</td><td> ${e.taxable.toFixed(2)}</td><td>${(e.rate/2).toFixed(2)}%</td><td> ${e.cgst.toFixed(2)}</td><td>${(e.rate/2).toFixed(2)}%</td><td> ${e.sgst.toFixed(2)}</td><td> ${e.totalTax.toFixed(2)}</td></tr>`
 		}).join('')
 
-		const taxSummaryTotalRow = `<tr style="font-weight:700"><td>Total</td><td>Rs. ${aggTaxable.toFixed(2)}</td><td></td><td>Rs. ${aggCgst.toFixed(2)}</td><td></td><td>Rs. ${aggSgst.toFixed(2)}</td><td>Rs. ${aggTotalTax.toFixed(2)}</td></tr>`
+		const taxSummaryTotalRow = `<tr style="font-weight:700"><td>Total</td><td> ${aggTaxable.toFixed(2)}</td><td></td><td> ${aggCgst.toFixed(2)}</td><td></td><td> ${aggSgst.toFixed(2)}</td><td> ${aggTotalTax.toFixed(2)}</td></tr>`
 
 		const html = `
 		<!doctype html>
@@ -190,63 +202,70 @@ export async function GET(
 		          <th style="width:80px">HSN</th>
 		          <th style="width:80px" class="center">Quantity</th>
 		          <th style="width:100px" class="right">Rate</th>
-		          <th style="width:120px" class="right">Tax/Unit</th>
+		          <th style="width:120px" class="center">GST %</th>
 		          <th style="width:120px" class="right">Amount</th>
 		        </tr>
 		      </thead>
 		      <tbody>
-		        ${items.length ? items.map((it:any, idx:number) => {
-				const qty = Number(it.quantity || 0)
-				const rate = Number(it.unitPrice || 0)
-				const lineTotal = Number(it.lineTotal ?? qty * rate)
-				const taxPerUnit = it.taxPerUnit !== undefined ? Number(it.taxPerUnit) : (rate * 0.05) // assume 5% if missing
-				return `
-				  <tr>
-				    <td class="center">${idx+1}</td>
-				    <td>${escapeHtml(it.name || it.sku || 'Item')}</td>
-				    <td class="center">${escapeHtml(it.hsn || '')}</td>
-				    <td class="center">${qty} ${escapeHtml(it.unit || '')}</td>
-				    <td class="right">Rs. ${rate.toFixed(2)}</td>
-				    <td class="right">Rs. ${taxPerUnit.toFixed(2)} (5%)</td>
-				    <td class="right">Rs. ${lineTotal.toFixed(2)}</td>
-				  </tr>`
-			}).join('') : `
+						${items.length ? items.map((it:any, idx:number) => {
+										const qty = Number(it.quantity || 0)
+										const rateIncl = Number(it.unitPrice || 0)
+										const lineTotalIncl = Number(it.lineTotal ?? qty * rateIncl)
+										const prod = it && it.productId ? productMapForInvoice.get(String(it.productId)) : undefined
+										const gstPercent = Number((it && (it.gstPercent ?? it.taxRate)) ?? (prod && prod.gstPercent) ?? 5)
+										// taxable per unit and tax per unit from inclusive price
+										const taxablePerUnit = rateIncl / (1 + gstPercent / 100)
+										const taxPerUnit = rateIncl - taxablePerUnit
+										const lineTax = taxPerUnit * qty
+										const lineTaxDisplay = taxPerUnit.toFixed(2)
+										const lineTotalTaxable = taxablePerUnit * qty
+										return `
+											<tr>
+												<td class="center">${idx+1}</td>
+												<td>${escapeHtml(it.name || it.sku || 'Item')}</td>
+												<td class="center">${escapeHtml(it.hsn || '')}</td>
+												<td class="center">${qty} ${escapeHtml(it.unit || '')}</td>
+												<td class="right"> ${rateIncl.toFixed(2)}</td>
+												<td class="center"> ${gstPercent}%</td>
+												<td class="right"> ${lineTotalIncl.toFixed(2)}</td>
+											</tr>`
+								}).join('') : `
 			  <tr>
 			    <td class="center">1</td>
 			    <td>Apple</td>
 			    <td class="center">808</td>
 			    <td class="center">5 KG</td>
-			    <td class="right">Rs. 100.00</td>
-			    <td class="right">Rs. 5.00 (5%)</td>
-			    <td class="right">Rs. 525.00</td>
+			    <td class="right"> 100.00</td>
+			    <td class="right"> 5.00 (5%)</td>
+			    <td class="right"> 525.00</td>
 			  </tr>
 			  <tr>
 			    <td class="center">2</td>
 			    <td>Banana</td>
 			    <td class="center">803</td>
 			    <td class="center">5 KG</td>
-			    <td class="right">Rs. 100.00</td>
-			    <td class="right">Rs. 5.00 (5%)</td>
-			    <td class="right">Rs. 525.00</td>
+			    <td class="right"> 100.00</td>
+			    <td class="right"> 5.00 (5%)</td>
+			    <td class="right"> 525.00</td>
 			  </tr>
 			  <tr>
 			    <td class="center">3</td>
 			    <td>Orange</td>
 			    <td class="center">805</td>
 			    <td class="center">5 KG</td>
-			    <td class="right">Rs. 100.00</td>
-			    <td class="right">Rs. 5.00 (5%)</td>
-			    <td class="right">Rs. 525.00</td>
+			    <td class="right"> 100.00</td>
+			    <td class="right"> 5.00 (5%)</td>
+			    <td class="right"> 525.00</td>
 			  </tr>`}
 		      </tbody>
 		    </table>
 
 		    <div class="totals">
 		      <table>
-		        <tr><td>Subtotal:</td><td class="right">Rs. ${subtotalNum.toFixed(2)}</td></tr>
-		        <tr><td>Tax:</td><td class="right">Rs. ${taxNum.toFixed(2)}</td></tr>
-		        <tr><td>Discount:</td><td class="right">- Rs. ${discountNum.toFixed(2)}</td></tr>
-		        <tr style="font-weight:800;border-top:1px solid #ddd"><td>TOTAL</td><td class="right">Rs. ${totalNum.toFixed(2)}</td></tr>
+		        <tr><td>Subtotal:</td><td class="right"> ${subtotalNum.toFixed(2)}</td></tr>
+		        <tr><td>Tax:</td><td class="right"> ${taxNum.toFixed(2)}</td></tr>
+		        <tr><td>Discount:</td><td class="right">-  ${discountNum.toFixed(2)}</td></tr>
+		        <tr style="font-weight:800;border-top:1px solid #ddd"><td>TOTAL</td><td class="right"> ${totalNum.toFixed(2)}</td></tr>
 		      </table>
 		    </div>
 

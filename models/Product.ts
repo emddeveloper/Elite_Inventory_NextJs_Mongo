@@ -26,6 +26,12 @@ const ProductSchema = new mongoose.Schema({
     required: [true, 'Price is required'],
     min: [0, 'Price cannot be negative'],
   },
+  gstPercent: {
+    type: Number,
+    required: true,
+    default: 5,
+    min: [0, 'GST percent cannot be negative'],
+  },
   cost: {
     type: Number,
     required: [true, 'Cost is required'],

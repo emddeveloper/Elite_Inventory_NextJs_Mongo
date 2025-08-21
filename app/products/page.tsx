@@ -14,6 +14,7 @@ interface Product {
   description: string
   category: string
   price: number
+  gstPercent?: number
   cost: number
   quantity: number
   minQuantity: number
@@ -205,6 +206,7 @@ export default function ProductsPage() {
                         <th className="table-header">SKU</th>
                         <th className="table-header">Category</th>
                         <th className="table-header">Price</th>
+                        <th className="table-header">GST %</th>
                         <th className="table-header">Quantity</th>
                         <th className="table-header">Status</th>
                         <th className="table-header">Total Value</th>
@@ -214,13 +216,13 @@ export default function ProductsPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {loading ? (
                         <tr>
-                          <td colSpan={8} className="table-cell text-center">
+                          <td colSpan={9} className="table-cell text-center">
                             Loading...
                           </td>
                         </tr>
                       ) : products.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="table-cell text-center">
+                          <td colSpan={9} className="table-cell text-center">
                             No products found
                           </td>
                         </tr>
@@ -236,6 +238,7 @@ export default function ProductsPage() {
                             <td className="table-cell font-mono">{product.sku}</td>
                             <td className="table-cell">{product.category}</td>
                             <td className="table-cell">${product.price.toFixed(2)}</td>
+                            <td className="table-cell">{product.gstPercent ?? 5}%</td>
                             <td className="table-cell">{product.quantity}</td>
                             <td className="table-cell">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStockStatusColor(product.stockStatus)}`}>
@@ -303,6 +306,7 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
     cost: '',
     quantity: '',
     minQuantity: '',
+    gstPercent: '5',
     location: '',
   })
 
@@ -316,7 +320,8 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
         price: product.price.toString(),
         cost: product.cost.toString(),
         quantity: product.quantity.toString(),
-        minQuantity: product.minQuantity.toString(),
+          minQuantity: product.minQuantity.toString(),
+          gstPercent: (product.gstPercent ?? 5).toString(),
         location: product.location,
       })
     } else {
@@ -328,7 +333,8 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
         price: '',
         cost: '',
         quantity: '',
-        minQuantity: '',
+          minQuantity: '',
+          gstPercent: '5',
         location: '',
       })
     }
@@ -435,6 +441,18 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
                   className="input-field"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">GST %</label>
+              <input
+                type="number"
+                step="0.01"
+                required
+                value={formData.gstPercent}
+                onChange={(e) => setFormData({ ...formData, gstPercent: e.target.value })}
+                className="input-field"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
