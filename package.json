@@ -24,6 +24,7 @@
     "lucide-react": "^0.294.0",
     "mongoose": "^8.17.1",
     "next": "14.0.4",
+  "puppeteer": "^21.3.8",
     "next-auth": "^4.24.5",
     "pdfkit": "^0.14.0",
     "postcss": "^8.4.32",

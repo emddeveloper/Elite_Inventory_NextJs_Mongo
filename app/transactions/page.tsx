@@ -70,7 +70,7 @@ export default function TransactionsPage() {
 											<tr key={tx._id}>
 												<td className="table-cell font-mono">{tx.invoiceNumber}</td>
 												<td className="table-cell">{tx.client.name}</td>
-												<td className="table-cell">${'{'}tx.total.toFixed(2){'}'}</td>
+												<td className="table-cell">{`${Number(tx.total ?? 0).toFixed(2)}`}</td>
 												<td className="table-cell">{new Date(tx.createdAt).toLocaleString()}</td>
 												<td className="table-cell">
 													<button onClick={() => download(tx._id, tx.invoiceNumber)} className="btn-secondary">Download Invoice</button>

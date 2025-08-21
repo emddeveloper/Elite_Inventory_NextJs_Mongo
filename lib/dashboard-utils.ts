@@ -47,12 +47,14 @@ export async function fetchDashboardData(): Promise<{ data: DashboardData | null
       console.log('✅ Fallback data loaded successfully')
       return { data: fallbackData, source: 'fallback' }
     } catch (fallbackError) {
-      console.error('❌ Both API and fallback failed:', fallbackError)
-      return { 
-        data: null, 
-        source: 'fallback', 
-        error: `Failed to load dashboard data from both API and fallback sources. API error: ${error.message}, Fallback error: ${fallbackError.message}` 
-      }
+        console.error('❌ Both API and fallback failed:', fallbackError)
+        const apiMsg = error && typeof error === 'object' && 'message' in (error as any) ? (error as any).message : String(error)
+        const fbMsg = fallbackError && typeof fallbackError === 'object' && 'message' in (fallbackError as any) ? (fallbackError as any).message : String(fallbackError)
+        return { 
+          data: null, 
+          source: 'fallback', 
+          error: `Failed to load dashboard data from both API and fallback sources. API error: ${apiMsg}, Fallback error: ${fbMsg}` 
+        }
     }
   }
 }
