@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 		await dbConnect()
 		const body = await request.json()
 
-		const { client, items, tax = 0, discount = 0 } = body
+	const { client, items, tax = 0, discount = 0, discountPercent = 0 } = body
 		if (!client || !client.name || !client.address || !client.email || !client.whatsapp) {
 			return NextResponse.json({ error: 'Missing client information' }, { status: 400 })
 		}
@@ -80,7 +80,12 @@ export async function POST(request: NextRequest) {
 			})
 		}
 
-		const total = subtotal + Number(tax || 0) - Number(discount || 0)
+		// Prefer server-side calculation of discount when percent is provided
+		let discountAmount = Number(discount || 0)
+		if (Number(discountPercent) && Number(discountPercent) > 0) {
+			discountAmount = +(subtotal * (Number(discountPercent) / 100))
+		}
+		const total = subtotal + Number(tax || 0) - discountAmount
 		const invoiceNumber = generateInvoiceNumber()
 
 		// Create transaction
@@ -90,7 +95,8 @@ export async function POST(request: NextRequest) {
 			items: finalizedItems,
 			subtotal,
 			tax,
-			discount,
+			discount: discountAmount,
+			discountPercent: Number(discountPercent) || 0,
 			total
 		})
 

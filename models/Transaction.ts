@@ -23,6 +23,7 @@ export interface ITransaction extends Document {
 	subtotal: number
 	tax: number
 	discount: number
+	discountPercent?: number
 	total: number
 	createdAt: Date
 }
@@ -50,6 +51,7 @@ const TransactionSchema = new Schema<ITransaction>({
 	subtotal: { type: Number, required: true },
 	tax: { type: Number, required: true, default: 0 },
 	discount: { type: Number, required: true, default: 0 },
+	discountPercent: { type: Number, required: false, default: 0 },
 	total: { type: Number, required: true },
 	createdAt: { type: Date, default: Date.now },
 })

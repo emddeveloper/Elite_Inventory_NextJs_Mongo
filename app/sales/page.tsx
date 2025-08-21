@@ -22,6 +22,9 @@ export default function SalesPage() {
 	const [items, setItems] = useState<Array<{ productId: string; name: string; sku: string; unitPrice: number; quantity: number; lineTotal: number }>>([])
 	const [loadingProducts, setLoadingProducts] = useState(false)
 	const [submitting, setSubmitting] = useState(false)
+	const [discountPercent, setDiscountPercent] = useState<number>(0)
+	const [discountAmount, setDiscountAmount] = useState<number>(0)
+	const [discountMode, setDiscountMode] = useState<'percent' | 'amount'>('percent')
 
 	useEffect(() => {
 		loadProducts('')
@@ -59,7 +62,11 @@ export default function SalesPage() {
 
 	const subtotal = useMemo(() => items.reduce((s, i) => s + i.lineTotal, 0), [items])
 	const tax = 0
-	const discount = 0
+	const discount = Number(
+		(discountMode === 'percent'
+			? ((subtotal * (discountPercent / 100)) || 0)
+			: (discountAmount || 0))
+	)
 	const total = subtotal + tax - discount
 
 	const submit = async () => {
@@ -76,7 +83,7 @@ export default function SalesPage() {
 			const res = await fetch('/api/transactions', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ client, items: items.map(i => ({ productId: i.productId, quantity: i.quantity })), tax, discount })
+				body: JSON.stringify({ client, items: items.map(i => ({ productId: i.productId, quantity: i.quantity })), tax, discount, discountPercent })
 			})
 			const data = await res.json()
 			if (res.ok) {
@@ -194,6 +201,26 @@ export default function SalesPage() {
 
 							<div className="flex justify-end mt-4">
 								<div className="w-80 space-y-2 text-sm">
+										<div className="flex items-center justify-between">
+											<label className="text-gray-600">Discount</label>
+											<div className="flex items-center space-x-2">
+												<select value={discountMode} onChange={(e) => setDiscountMode(e.target.value as any)} className="input-field w-36">
+													<option value="percent">Percent (%)</option>
+													<option value="amount">Amount</option>
+												</select>
+												{discountMode === 'percent' ? (
+													<>
+														<input type="number" min={0} max={100} value={discountPercent} onChange={(e) => setDiscountPercent(Number(e.target.value || '0'))} className="input-field w-24" />
+														<span className="text-sm text-gray-500">%</span>
+													</>
+												) : (
+													<>
+														<input type="number" min={0} max={subtotal} value={discountAmount} onChange={(e) => setDiscountAmount(Number(e.target.value || '0'))} className="input-field w-36" />
+														<span className="text-sm text-gray-500">{`$`}</span>
+													</>
+												)}
+											</div>
+										</div>
 									<div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">{`$${subtotal.toFixed(2)}`}</span></div>
 									<div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">{`$${tax.toFixed(2)}`}</span></div>
 									<div className="flex justify-between"><span className="text-gray-600">Discount</span><span className="font-medium">-{`$${discount.toFixed(2)}`}</span></div>
