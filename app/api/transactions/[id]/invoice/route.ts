@@ -45,15 +45,18 @@ export async function GET(
 		const discountNum = Number(tx.discount || 0)
 		const totalNum = Number(tx.total || subtotalNum + taxNum - discountNum)
 
-		// Fallback company + sample data taken from the provided screenshot
-		const company = {
-			name: 'Akash Enterprises',
-			address: '11, Main Market, Chandni Chowk, New Delhi, Delhi 110006',
-			phone: '+91 9981278197',
-			email: 'akashenterprises@gmail.com',
-			website: 'www.akashenterprises.in',
-			gstin: '08AALCR2857A1ZD',
-			pan: 'AVHPC6971A'
+		// Load company data from company.json (runtime) — no hardcoded fallback
+		let company: any = {}
+		try {
+			const fs = eval("require")('fs')
+			const path = eval("require")('path')
+			const file = path.join(process.cwd(), 'company.json')
+			if (fs.existsSync(file)) {
+				const raw = fs.readFileSync(file, 'utf8')
+				company = JSON.parse(raw)
+			}
+		} catch (e) {
+			company = {}
 		}
 
 		const shipToSample = {
@@ -163,17 +166,17 @@ export async function GET(
 		  <div class="page">
 		    <div class="top">
 		      <div class="company-block">
-		        <div class="company-name">${escapeHtml(company.name)}</div>
-		        <div class="small">${escapeHtml(company.address)}</div>
-		        <div class="small">Phone: ${escapeHtml(company.phone)} &nbsp; Email: ${escapeHtml(company.email)} &nbsp; Website: ${escapeHtml(company.website)}</div>
-		        <div class="small">GSTIN: ${escapeHtml(company.gstin)} &nbsp; PAN Number: ${escapeHtml(company.pan)}</div>
+				<div class="company-name">${escapeHtml(company.name || '')}</div>
+				<div class="small">${escapeHtml(company.address || '')}</div>
+				<div class="small">Phone: ${escapeHtml(company.phone || '')} &nbsp; Email: ${escapeHtml(company.email || '')} &nbsp; Website: ${escapeHtml(company.website || '')}</div>
+				<div class="small">GSTIN: ${escapeHtml(company.gstin || '')} &nbsp; PAN Number: ${escapeHtml(company.pan || '')}</div>
 		      </div>
 		      <div class="invoice-block">
 		        <div class="invoice-title">TAX INVOICE</div>
 		        <div class="meta small">Invoice No: <strong>${escapeHtml(invoiceNumber)}</strong></div>
 		        <div class="meta small">Invoice Date: <strong>${escapeHtml(invoiceDate)}</strong></div>
-		        <div class="meta small">Email Id: <strong>${escapeHtml(company.email)}</strong></div>
-		        <div class="meta small">Website: <strong>${escapeHtml(company.website)}</strong></div>
+				<div class="meta small">Email Id: <strong>${escapeHtml(company.email || '')}</strong></div>
+				<div class="meta small">Website: <strong>${escapeHtml(company.website || '')}</strong></div>
 		      </div>
 		    </div>
 
@@ -183,7 +186,7 @@ export async function GET(
 		        <div style="margin-top:6px">${escapeHtml(client.name || billToSample.name)}</div>
 		        <div class="small">${escapeHtml(client.address || billToSample.address)}</div>
 		        <div class="small">Pin: ${escapeHtml((client.pin || billToSample.pin) as any)}</div>
-		        <div class="small">Phone: ${escapeHtml(client.whatsapp || company.phone)}</div>
+				<div class="small">Phone: ${escapeHtml(client.whatsapp || company.phone || '')}</div>
 		        <div class="small">GSTIN: ${escapeHtml(client.gstin || '08HULMPB2839A1AB')}</div>
 		      </div>
 		      <div style="flex:1" class="box">
@@ -289,7 +292,7 @@ export async function GET(
 		      </div>
 		      <div class="bank">
 		        <div style="font-weight:700">Bank Details</div>
-		        <div class="small">Account holder: Akash Enterprises<br/>Account number: 38028101723<br/>Bank: SBI Branch: Jaipur<br/>IFSC code: SBIN0002836 UPI ID: 1281@paytm</div>
+			<div class="small">Account holder: ${escapeHtml((company.bank && company.bank.accountHolder) || '')}<br/>Account number: ${escapeHtml((company.bank && company.bank.accountNumber) || '')}<br/>Bank: ${escapeHtml((company.bank && company.bank.bankName) || '')} Branch: ${escapeHtml((company.bank && company.bank.branch) || '')}<br/>IFSC code: ${escapeHtml((company.bank && company.bank.ifsc) || '')} UPI ID: ${escapeHtml((company.bank && company.bank.upi) || '')}</div>
 		      </div>
 		    </div>
 
