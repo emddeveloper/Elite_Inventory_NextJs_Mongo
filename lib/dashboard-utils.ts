@@ -1,6 +1,6 @@
 import { DashboardData } from '@/types/dashboard'
 
-export async function fetchDashboardData(): Promise<{ data: DashboardData | null; source: 'api' | 'fallback'; error?: string }> {
+export async function fetchDashboardData(): Promise<{ success: boolean; data: DashboardData | null; source: 'api' | 'fallback'; error?: string }> {
   try {
     // Try to fetch from API first
     console.log('🔄 Attempting to fetch data from API...')
@@ -21,7 +21,7 @@ export async function fetchDashboardData(): Promise<{ data: DashboardData | null
     
     if (result.success) {
       console.log('✅ API data fetched successfully')
-      return { data: result.data, source: 'api' }
+      return { success: true, data: result.data, source: 'api' }
     } else {
       throw new Error(result.error || 'API returned unsuccessful response')
     }
@@ -45,15 +45,16 @@ export async function fetchDashboardData(): Promise<{ data: DashboardData | null
 
       const fallbackData = await fallbackResponse.json()
       console.log('✅ Fallback data loaded successfully')
-      return { data: fallbackData, source: 'fallback' }
+      return { success: true, data: fallbackData, source: 'fallback' }
     } catch (fallbackError) {
         console.error('❌ Both API and fallback failed:', fallbackError)
         const apiMsg = error && typeof error === 'object' && 'message' in (error as any) ? (error as any).message : String(error)
         const fbMsg = fallbackError && typeof fallbackError === 'object' && 'message' in (fallbackError as any) ? (fallbackError as any).message : String(fallbackError)
-        return { 
-          data: null, 
-          source: 'fallback', 
-          error: `Failed to load dashboard data from both API and fallback sources. API error: ${apiMsg}, Fallback error: ${fbMsg}` 
+        return {
+          success: false,
+          data: null,
+          source: 'fallback',
+          error: `Failed to load dashboard data from both API and fallback sources. API error: ${apiMsg}, Fallback error: ${fbMsg}`
         }
     }
   }

@@ -47,6 +47,43 @@ export default function Dashboard() {
     }
   }
 
+  useEffect(() => {
+    let mounted = true
+    let intervalId: NodeJS.Timeout | null = null
+
+    const load = async () => {
+      try {
+        if (!mounted) return
+        setLoading(true)
+        const res = await fetchDashboardData()
+        if (!mounted) return
+        if (res.success) {
+          setData(res.data)
+          setError(null)
+        } else {
+          setError(res.error || 'Failed to load dashboard')
+        }
+      } catch (e) {
+        if (!mounted) return
+        setError(String(e))
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    // initial load
+    load()
+
+    // If using API as dataSource, poll every 5 seconds for live updates.
+    if (dataSource === 'api') {
+      intervalId = setInterval(load, 60*1000*5)
+    }
+
+    return () => {
+      mounted = false
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [dataSource])
   const retryApiConnection = async () => {
     try {
       setLoading(true)
