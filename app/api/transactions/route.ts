@@ -15,10 +15,24 @@ export async function GET(request: NextRequest) {
 		const page = parseInt(searchParams.get('page') || '1')
 		const limit = parseInt(searchParams.get('limit') || '10')
 		const skip = (page - 1) * limit
+		const q = (searchParams.get('q') || '').trim()
+
+		// Build filter - if q provided, search invoiceNumber, client.name, or item name (case-insensitive)
+		let filter: any = {}
+		if (q) {
+			const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+			filter = {
+				$or: [
+					{ invoiceNumber: re },
+					{ 'client.name': re },
+					{ 'items.name': re },
+				]
+			}
+		}
 
 		const [transactions, total] = await Promise.all([
-			Transaction.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit),
-			Transaction.countDocuments({})
+			Transaction.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+			Transaction.countDocuments(filter)
 		])
 
 		return NextResponse.json({
