@@ -34,6 +34,7 @@ export default function Scanner({ onDetected, onClose, constraints, className }:
               // Basic cleanup
               const code = text.trim()
               if (code) {
+                try { console.debug('[Scanner] Detected code:', code) } catch {}
                 stopped = true
                 codeReader.reset()
                 setActive(false)
@@ -61,7 +62,7 @@ export default function Scanner({ onDetected, onClose, constraints, className }:
   return (
     <div className={className}>
       <div className="relative bg-black rounded-md overflow-hidden">
-        <video ref={videoRef} className="w-full h-64 object-cover" muted playsInline />
+        <video ref={videoRef} className="w-full h-64 object-cover" muted playsInline autoPlay />
         <div className="absolute inset-0 pointer-events-none border-2 border-white/50 m-6 rounded" />
       </div>
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}

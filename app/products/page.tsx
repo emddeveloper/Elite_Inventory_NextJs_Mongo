@@ -73,6 +73,25 @@ export default function ProductsPage() {
     }
   }
 
+  // Immediately refresh products for a given term/category (used by scanner)
+  const fetchProductsWith = async (term: string, category: string) => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (term) params.append('search', term)
+      if (category) params.append('category', category)
+      const response = await fetch(`/api/products?${params}`)
+      const data = await response.json()
+      if (response.ok) {
+        setProducts(data.products)
+      }
+    } catch (e) {
+      // no-op; searchTerm state will still trigger fetchProducts via useEffect
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleAddProduct = async (productData: any) => {
     try {
       const response = await fetch('/api/products', {
@@ -322,6 +341,7 @@ export default function ProductsPage() {
                     <Scanner
                       onDetected={(code) => {
                         setSearchTerm(code)
+                        fetchProductsWith(code, selectedCategory)
                         setScanSearchOpen(false)
                         toast.success(`Scanned: ${code}`)
                       }}
