@@ -209,10 +209,10 @@ export default function SalesPage() {
 							<div className="card lg:col-span-2">
 								<div className="flex items-center justify-between mb-4">
 									<h2 className="text-lg font-medium text-gray-900">Add Products</h2>
-									<div className="flex items-center gap-2">
-										<div className="relative w-80">
+									<div className="flex w-full sm:w-auto sm:flex-none sm:items-center gap-2 sm:justify-end flex-col sm:flex-row">
+										<div className="relative w-full sm:w-80">
 											<MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-											<input className="input-field pl-10 pr-10" placeholder="Search products..." value={query} onChange={(e) => { setQuery(e.target.value); loadProducts(e.target.value) }} />
+											<input className="input-field pl-10 pr-10 w-full" placeholder="Search products..." value={query} onChange={(e) => { setQuery(e.target.value); loadProducts(e.target.value) }} />
 											{query && (
 												<button
 													type="button"
@@ -224,7 +224,7 @@ export default function SalesPage() {
 												</button>
 											)}
 										</div>
-										<button type="button" className="btn-secondary flex items-center" title="Scan to search" onClick={() => setScanOpen(true)}>
+										<button type="button" className="btn-secondary flex items-center w-full sm:w-auto justify-center" title="Scan to search" onClick={() => setScanOpen(true)}>
 											<QrCodeIcon className="h-5 w-5 mr-2" />
 											Scan
 										</button>

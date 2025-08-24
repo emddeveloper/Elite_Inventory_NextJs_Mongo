@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Bars3Icon, BellIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, BellIcon, MagnifyingGlassIcon, QrCodeIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { UserCircleIcon } from '@heroicons/react/24/solid'
 import { useRouter } from 'next/navigation'
+import Scanner from '@/components/Scanner'
 
 export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => void }) {
   const [lowStock, setLowStock] = useState<any[]>([])
@@ -14,6 +15,14 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
   const [loginDuration, setLoginDuration] = useState<string>('')
   const router = useRouter()
   const userMenuRef = useRef<HTMLDivElement | null>(null)
+  const searchBoxRef = useRef<HTMLDivElement | null>(null)
+
+  // Global product search state
+  const [search, setSearch] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [results, setResults] = useState<any[]>([])
+  const [openScanner, setOpenScanner] = useState(false)
 
   // Poll low-stock products every 10s
   useEffect(() => {
@@ -31,6 +40,51 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
     fetchLow()
     const iv = setInterval(fetchLow, 10000)
     return () => { mounted = false; clearInterval(iv) }
+  }, [])
+
+  // Debounced global search
+  useEffect(() => {
+    let abort = false
+    let t: any
+    async function run() {
+      const q = search.trim()
+      if (!q) {
+        setResults([])
+        setSearchLoading(false)
+        return
+      }
+      setSearchLoading(true)
+      try {
+        const res = await fetch(`/api/products?search=${encodeURIComponent(q)}&limit=10`)
+        if (!res.ok) throw new Error('Failed')
+        const data = await res.json()
+        if (!abort) setResults(Array.isArray(data.products) ? data.products : [])
+      } catch {
+        if (!abort) setResults([])
+      } finally {
+        if (!abort) setSearchLoading(false)
+      }
+    }
+    t = setTimeout(run, 250)
+    return () => { abort = true; clearTimeout(t) }
+  }, [search])
+
+  // Close search dropdown on outside click or Escape
+  useEffect(() => {
+    function onDocDown(e: MouseEvent) {
+      const box = searchBoxRef.current
+      if (!box) return
+      if (e.target instanceof Node && !box.contains(e.target)) setSearchOpen(false)
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setSearchOpen(false)
+    }
+    document.addEventListener('mousedown', onDocDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocDown)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [])
 
   // Fetch current user once
@@ -108,7 +162,78 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
       {/* Separator */}
       <div className="h-6 w-px bg-gray-200 lg:hidden" aria-hidden="true" />
 
-      <div className="flex flex-1 items-center justify-end lg:gap-x-6">
+      <div className="flex flex-1 items-center justify-between lg:gap-x-6">
+        {/* Global Search */}
+        <div ref={searchBoxRef} className="hidden lg:block flex-1 max-w-2xl">
+          <div className="relative">
+            <div className="flex items-center rounded-lg border border-primary-100 bg-white shadow-sm focus-within:ring-2 focus-within:ring-primary-200">
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 ml-3" />
+              <input
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setSearchOpen(true) }}
+                onFocus={() => setSearchOpen(true)}
+                placeholder="Search products by name or SKU..."
+                className="w-full bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+              />
+              {search && (
+                <button
+                  onClick={() => { setSearch(''); setResults([]); setSearchOpen(false) }}
+                  className="p-2 text-gray-400 hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              )}
+              <div className="h-6 w-px bg-gray-200" />
+              <button
+                onClick={() => setOpenScanner(true)}
+                className="px-3 py-2 text-primary-700 hover:text-primary-800"
+                title="Scan barcode"
+              >
+                <QrCodeIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Dropdown */}
+            {searchOpen && (
+              <div className="absolute z-50 mt-1 w-full rounded-lg bg-white shadow-lg ring-1 ring-gray-900/5">
+                <div className="max-h-80 overflow-auto">
+                  {searchLoading ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
+                  ) : results.length > 0 ? (
+                    <ul className="divide-y">
+                      {results.map((p) => (
+                        <li
+                          key={p._id}
+                          className="px-4 py-3 hover:bg-gray-50 cursor-pointer"
+                          onClick={() => {
+                            try { setSearch(`${p.sku} - ${p.name}`) } catch {}
+                            setSearchOpen(false)
+                            router.push(`/products?search=${encodeURIComponent(p.sku || p.name)}`)
+                          }}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{p.name}</div>
+                              <div className="text-xs text-gray-500">SKU: {p.sku}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm text-gray-700">₹{Number(p.price).toFixed(2)}</div>
+                              <div className="text-xs text-gray-500">Qty: {p.quantity}</div>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-gray-500">No matching products</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center gap-x-4 lg:gap-x-6">
           <div className="relative">
             <button type="button" onClick={() => setOpenNotifs(!openNotifs)} className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
@@ -181,6 +306,31 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
           
         </div>
       </div>
+
+      {/* Scanner Modal */}
+      {openScanner && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setOpenScanner(false)} />
+          <div className="relative z-[61] w-full max-w-lg mx-4 rounded-xl bg-white p-4 shadow-2xl ring-1 ring-gray-900/5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm font-medium text-gray-700">Scan Barcode</div>
+              <button className="p-2 text-gray-500 hover:text-gray-700" onClick={() => setOpenScanner(false)}>
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <Scanner
+              onDetected={(code) => {
+                setSearch(code)
+                setOpenScanner(false)
+                setSearchOpen(true)
+              }}
+              onClose={() => setOpenScanner(false)}
+              className=""
+              closeOnDetect
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
