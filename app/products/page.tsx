@@ -398,6 +398,7 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
     location: '',
   })
   const [scanSkuOpen, setScanSkuOpen] = useState(false)
+  const [showBarcode, setShowBarcode] = useState(false)
 
   useEffect(() => {
     if (product) {
@@ -449,83 +450,110 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      
+
+      {/* Centered, compact, no-scroll modal */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-md rounded-lg bg-white p-6">
-          <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
-            {product ? 'Edit Product' : 'Add Product'}
-          </Dialog.Title>
+        <Dialog.Panel className="mx-auto w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-blue-100">
+          {/* Colorful header */}
+          <div className="rounded-t-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-fuchsia-600 px-6 py-3 text-white">
+            <Dialog.Title className="text-base md:text-lg font-semibold tracking-wide">
+              {product ? 'Edit Product' : 'Add Product'}
+            </Dialog.Title>
+            <p className="text-xs opacity-90">Quickly add essential details. Advanced fields are condensed.</p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Name</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="input-field"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">SKU</label>
-              <div className="flex gap-2">
+          <form onSubmit={handleSubmit} className="px-6 py-5">
+            {/* Two-column compact grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
                 <input
                   type="text"
                   required
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  className="input-field flex-1"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="input-field"
+                  placeholder="Product name"
                 />
-                <button
-                  type="button"
-                  className="btn-secondary flex items-center whitespace-nowrap"
-                  onClick={() => setScanSkuOpen(true)}
-                  title="Scan SKU"
-                >
-                  <QrCodeIcon className="h-5 w-5 mr-1" /> Scan
-                </button>
               </div>
-              {formData.sku && (
-                <div className="mt-2 p-3 rounded border border-gray-200">
-                  <p className="text-xs text-gray-500 mb-2">Barcode preview for SKU</p>
-                  <Barcode value={formData.sku} height={60} />
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Description</label>
-              <textarea
-                required
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="input-field"
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Category</label>
-              <select
-                required
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="input-field"
-              >
-                <option value="">Select Category</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Price</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">SKU</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    className="input-field flex-1"
+                    placeholder="e.g. ABC-001"
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary flex items-center whitespace-nowrap"
+                    onClick={() => setScanSkuOpen(true)}
+                    title="Scan SKU"
+                  >
+                    <QrCodeIcon className="h-5 w-5 mr-1" /> Scan
+                  </button>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  required
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="input-field"
+                  rows={2}
+                  placeholder="Short description"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  required
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">GST %</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={formData.gstPercent}
+                    onChange={(e) => setFormData({ ...formData, gstPercent: e.target.value })}
+                    className="input-field"
+                    placeholder="5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    className="input-field"
+                    placeholder="Rack A-1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Price</label>
                 <input
                   type="number"
                   step="0.01"
@@ -533,10 +561,11 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   className="input-field"
+                  placeholder="0.00"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Cost</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Cost</label>
                 <input
                   type="number"
                   step="0.01"
@@ -544,68 +573,55 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
                   value={formData.cost}
                   onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
                   className="input-field"
+                  placeholder="0.00"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">GST %</label>
-              <input
-                type="number"
-                step="0.01"
-                required
-                value={formData.gstPercent}
-                onChange={(e) => setFormData({ ...formData, gstPercent: e.target.value })}
-                className="input-field"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Quantity</label>
                 <input
                   type="number"
                   required
                   value={formData.quantity}
                   onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                   className="input-field"
+                  placeholder="0"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Min Quantity</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Min Qty</label>
                 <input
                   type="number"
                   required
                   value={formData.minQuantity}
                   onChange={(e) => setFormData({ ...formData, minQuantity: e.target.value })}
                   className="input-field"
+                  placeholder="0"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Location</label>
-              <input
-                type="text"
-                required
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="input-field"
-              />
-            </div>
+            {/* Optional: collapsed barcode preview to keep height small */}
+            {formData.sku && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowBarcode(v => !v)}
+                  className="text-xs text-indigo-600 hover:text-indigo-800"
+                >
+                  {showBarcode ? 'Hide' : 'Show'} barcode preview
+                </button>
+                {showBarcode && (
+                  <div className="mt-2 p-2 rounded border border-gray-200 inline-block">
+                    <Barcode value={formData.sku} height={48} />
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-primary"
-              >
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+              <button type="submit" className="btn-primary">
                 {product ? 'Update' : 'Add'} Product
               </button>
             </div>
