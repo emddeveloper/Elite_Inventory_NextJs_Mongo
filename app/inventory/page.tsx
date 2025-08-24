@@ -24,6 +24,7 @@ interface CountItem {
 
 export default function InventoryCountingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [scanOpen, setScanOpen] = useState(false)
   const [items, setItems] = useState<Record<string, CountItem>>({}) // key by SKU
   const totalSkus = useMemo(() => Object.keys(items).length, [items])
@@ -94,10 +95,21 @@ export default function InventoryCountingPage() {
     }
   }
 
+  // Sync padding with sidebar collapse (desktop only)
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('sidebar_collapsed')
+      if (v != null) setSidebarCollapsed(v === '1')
+    } catch {}
+    const handler = (e: any) => setSidebarCollapsed(Boolean(e?.detail?.collapsed))
+    window.addEventListener('sidebar:collapse-changed', handler as any)
+    return () => window.removeEventListener('sidebar:collapse-changed', handler as any)
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-      <div className="lg:pl-72">
+      <div className={sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}>
         <Header setSidebarOpen={setSidebarOpen} />
         <main className="py-10">
           <div className="px-4 sm:px-6 lg:px-8">

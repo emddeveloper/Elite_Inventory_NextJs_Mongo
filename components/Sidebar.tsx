@@ -12,6 +12,8 @@ import {
   ChartBarIcon,
   CogIcon,
   DocumentTextIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -37,6 +39,7 @@ function classNames(...classes: string[]) {
 export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const pathname = usePathname()
   const [menus, setMenus] = useState<string[]>([])
+  const [collapsed, setCollapsed] = useState<boolean>(false)
 
   useEffect(() => {
     let mounted = true
@@ -51,6 +54,25 @@ export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (op
       mounted = false
     }
   }, [])
+
+  // Load and persist collapse state (desktop only)
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('sidebar_collapsed')
+      if (v != null) setCollapsed(v === '1')
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0')
+    } catch {}
+    // Notify listeners (pages) that collapse state changed
+    try {
+      const event = new CustomEvent('sidebar:collapse-changed', { detail: { collapsed } })
+      window.dispatchEvent(event)
+    } catch {}
+  }, [collapsed])
 
   const navToRender = menus && menus.length > 0
     ? navigation.filter((item) => menus.some((m) => item.href === m || item.href.startsWith(m + '/')))
@@ -147,41 +169,52 @@ export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (op
         </Dialog>
       </Transition.Root>
 
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-primary-100 bg-white/70 backdrop-blur px-6 pb-4">
-          <div className="flex h-20 shrink-0 items-center">
-            <Link href="/" className="group outline-none">
-              <div>
-                <h1 className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 via-fuchsia-600 to-violet-700 group-hover:from-primary-800 group-hover:via-fuchsia-700 group-hover:to-violet-800">Elite Inventory Manager</h1>
-                <div className="mt-2 inline-flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-primary-600 via-fuchsia-600 to-violet-600 shadow-md">
-                  <SparklesIcon className="h-5 w-5 text-white" />
-                </div>
+      <div className={`hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex ${collapsed ? 'lg:w-20' : 'lg:w-72'} lg:flex-col transition-[width] duration-200`}>
+        <div className="flex grow flex-col gap-y-3 overflow-y-auto border-r border-gray-800/60 bg-gradient-to-b from-[#1f2533] via-[#1c2230] to-[#151a24] text-gray-200 px-3 pb-3">
+          {/* Header with brand and collapse toggle */}
+          <div className="flex h-20 shrink-0 items-center justify-between">
+            <Link href="/" className="group outline-none flex items-center gap-3">
+              <div className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-white/10">
+                <SparklesIcon className="h-5 w-5 text-white" />
               </div>
+              {!collapsed && (
+                <h1 className="text-lg font-semibold text-white">Inventory</h1>
+              )}
             </Link>
+            <button
+              onClick={() => setCollapsed(v => !v)}
+              className="hidden lg:inline-flex items-center justify-center h-8 w-8 rounded-md text-gray-200 hover:bg-white/10"
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? <ChevronRightIcon className="h-5 w-5" /> : <ChevronLeftIcon className="h-5 w-5" />}
+            </button>
           </div>
+
           <nav className="flex flex-1 flex-col">
-            <ul role="list" className="flex flex-1 flex-col gap-y-7">
+            <ul role="list" className="flex flex-1 flex-col gap-y-6">
               <li>
-                <ul role="list" className="-mx-2 space-y-1">
+                <ul role="list" className="-mx-1 space-y-1">
                   {navToRender.map((item) => (
                     <li key={item.name}>
                       <Link
                         href={item.href}
+                        title={collapsed ? item.name : undefined}
                         className={classNames(
                           pathname === item.href
-                            ? 'bg-primary-50/70 text-primary-700 border border-primary-100'
-                            : 'text-gray-700 hover:text-primary-700 hover:bg-primary-50/60',
-                          'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors'
+                            ? 'bg-[#3b82f6] text-white'
+                            : 'text-gray-300 hover:text-white hover:bg-white/10',
+                          'group flex items-center rounded-xl py-2 text-sm font-medium transition-colors',
+                          collapsed ? 'justify-center px-2' : 'gap-x-3 px-3'
                         )}
                       >
                         <item.icon
                           className={classNames(
-                            pathname === item.href ? 'text-primary-700' : 'text-gray-400 group-hover:text-primary-700',
-                            'h-6 w-6 shrink-0'
+                            pathname === item.href ? 'text-white' : 'text-gray-400 group-hover:text-white',
+                            'h-5 w-5 shrink-0'
                           )}
                           aria-hidden="true"
                         />
-                        {item.name}
+                        {!collapsed && <span className="truncate">{item.name}</span>}
                       </Link>
                     </li>
                   ))}
@@ -189,6 +222,17 @@ export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (op
               </li>
             </ul>
           </nav>
+
+          {/* Bottom collapse toggle for easier access */}
+          <div className="mt-auto flex items-center justify-center py-2">
+            <button
+              onClick={() => setCollapsed(v => !v)}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md text-gray-200 hover:bg-white/10"
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? <ChevronRightIcon className="h-5 w-5" /> : <ChevronLeftIcon className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
       </div>
     </>

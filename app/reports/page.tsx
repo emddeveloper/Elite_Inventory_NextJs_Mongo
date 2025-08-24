@@ -16,6 +16,7 @@ type Turnover = { productId: string; sku: string; name: string; unitsSold: numbe
 
 export default function ReportsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly')
   const [sales, setSales] = useState<SalesPoint[]>([])
   const [best, setBest] = useState<BestSeller[]>([])
@@ -74,10 +75,23 @@ export default function ReportsPage() {
     return { revenue, cogs, profit, margin }
   }, [profitSeries])
 
+  // Sync padding with sidebar collapse (desktop only)
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('sidebar_collapsed')
+      if (v != null) setSidebarCollapsed(v === '1')
+    } catch {}
+    const handler = (e: any) => {
+      setSidebarCollapsed(Boolean(e?.detail?.collapsed))
+    }
+    window.addEventListener('sidebar:collapse-changed', handler as any)
+    return () => window.removeEventListener('sidebar:collapse-changed', handler as any)
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-      <div className="lg:pl-72">
+      <div className={sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}>
         <Header setSidebarOpen={setSidebarOpen} />
         <main className="py-10">
           <div className="px-4 sm:px-6 lg:px-8 space-y-6">
