@@ -101,12 +101,14 @@ export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (op
                 </Transition.Child>
                 <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-primary-50/80 via-fuchsia-50/70 to-emerald-50/70 backdrop-blur-xl px-6 pb-4 border-r border-primary-100">
                   <div className="flex h-20 shrink-0 items-center">
-                    <div>
-                      <h1 className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 via-fuchsia-600 to-violet-700">Elite Inventory Manager</h1>
-                      <div className="mt-2 inline-flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-primary-600 via-fuchsia-600 to-violet-600 shadow-md">
-                        <SparklesIcon className="h-5 w-5 text-white" />
+                    <Link href="/" className="group outline-none">
+                      <div>
+                        <h1 className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 via-fuchsia-600 to-violet-700 group-hover:from-primary-800 group-hover:via-fuchsia-700 group-hover:to-violet-800">Elite Inventory Manager</h1>
+                        <div className="mt-2 inline-flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-primary-600 via-fuchsia-600 to-violet-600 shadow-md">
+                          <SparklesIcon className="h-5 w-5 text-white" />
+                        </div>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                   <nav className="flex flex-1 flex-col">
                     <ul role="list" className="flex flex-1 flex-col gap-y-7">
@@ -148,12 +150,14 @@ export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (op
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-primary-100 bg-white/70 backdrop-blur px-6 pb-4">
           <div className="flex h-20 shrink-0 items-center">
-            <div>
-              <h1 className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 via-fuchsia-600 to-violet-700">Elite Inventory Manager</h1>
-              <div className="mt-2 inline-flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-primary-600 via-fuchsia-600 to-violet-600 shadow-md">
-                <SparklesIcon className="h-5 w-5 text-white" />
+            <Link href="/" className="group outline-none">
+              <div>
+                <h1 className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 via-fuchsia-600 to-violet-700 group-hover:from-primary-800 group-hover:via-fuchsia-700 group-hover:to-violet-800">Elite Inventory Manager</h1>
+                <div className="mt-2 inline-flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-primary-600 via-fuchsia-600 to-violet-600 shadow-md">
+                  <SparklesIcon className="h-5 w-5 text-white" />
+                </div>
               </div>
-            </div>
+            </Link>
           </div>
           <nav className="flex flex-1 flex-col">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
