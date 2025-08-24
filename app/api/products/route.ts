@@ -156,6 +156,8 @@ export async function POST(request: NextRequest) {
           productName: product.name,
           type: 'ADJUSTMENT',
           quantity: Number(product.quantity),
+          unitCost: Number(product.cost),
+          unitPrice: Number(product.price),
           balanceAfter: Number(product.quantity),
           source: 'opening',
           note: 'Initial stock on product creation',

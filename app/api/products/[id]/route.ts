@@ -82,6 +82,8 @@ export async function PUT(
             productName: product.name,
             type: 'ADJUSTMENT',
             quantity: newQty, // ADJUSTMENT uses absolute quantity
+            unitCost: Number(product.cost),
+            unitPrice: Number(product.price),
             balanceAfter: newQty,
             source: 'adjustment',
             note: `Stock adjusted via product edit (was ${oldQty})`,
@@ -144,6 +146,8 @@ export async function DELETE(
           productName: prev.name,
           type: 'ADJUSTMENT',
           quantity: Number(prev.quantity), // keep as absolute quantity
+          unitCost: Number(prev.cost),
+          unitPrice: Number(prev.price),
           balanceAfter: Number(prev.quantity),
           source: 'adjustment',
           note: 'Product deactivated',

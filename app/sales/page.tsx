@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
-import { MagnifyingGlassIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, PlusIcon, TrashIcon, QrCodeIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF, downloadPDF, getDefaultCompany } from '@/lib/pdf-utils'
+import { Dialog } from '@headlessui/react'
+import Scanner from '@/components/Scanner'
 
 type Product = {
 	_id: string
@@ -27,6 +29,7 @@ export default function SalesPage() {
 	const [discountPercent, setDiscountPercent] = useState<number>(0)
 	const [discountAmount, setDiscountAmount] = useState<number>(0)
 	const [discountMode, setDiscountMode] = useState<'percent' | 'amount'>('percent')
+	const [scanOpen, setScanOpen] = useState(false)
 
 	useEffect(() => {
 		loadProducts('')
@@ -54,6 +57,9 @@ export default function SalesPage() {
 			return
 		}
 		setItems(prev => [...prev, { productId: p._id, name: p.name, sku: p.sku, unitPrice: p.price, quantity: 1, lineTotal: p.price, gstPercent: p.gstPercent }])
+		// Clear search after adding a product
+		setQuery('')
+		loadProducts('')
 	}
 
 	const removeItem = (productId: string) => setItems(prev => prev.filter(i => i.productId !== productId))
@@ -146,6 +152,47 @@ export default function SalesPage() {
 							<h1 className="text-2xl font-bold text-gray-900">Sales</h1>
 						</div>
 
+						{/* Scanner Modal */}
+						<Dialog open={scanOpen} onClose={() => setScanOpen(false)} className="relative z-50">
+							<div className="fixed inset-0 bg-black/40" aria-hidden="true" />
+							<div className="fixed inset-0 flex items-center justify-center p-4">
+								<Dialog.Panel className="mx-auto w-full max-w-md rounded bg-white p-4">
+									<Dialog.Title className="text-lg font-medium mb-2">Scan to Search</Dialog.Title>
+									<Scanner
+										className="w-full"
+										onDetected={async (code) => {
+											const value = (code || '').trim()
+											if (!value) return
+											setQuery(value)
+											try {
+												const params = new URLSearchParams()
+												params.append('search', value)
+												params.append('limit', '20')
+												const res = await fetch(`/api/products?${params.toString()}`)
+												const data = await res.json()
+												if (res.ok && Array.isArray(data.products) && data.products.length) {
+													const exact = data.products.find((p: any) => String(p.sku).toLowerCase() === value.toLowerCase())
+													const chosen = exact || data.products[0]
+													addItem(chosen)
+												} else {
+													try { toast.error('No matching product found') } catch {}
+												}
+											} catch {}
+											finally {
+												await loadProducts('')
+											}
+										}}
+										onClose={() => setScanOpen(false)}
+										beep
+										closeOnDetect
+									/>
+									<div className="mt-3 flex justify-end">
+										<button className="btn-secondary" onClick={() => setScanOpen(false)}>Close</button>
+									</div>
+								</Dialog.Panel>
+							</div>
+						</Dialog>
+
 						<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 							{/* Client Details */}
 							<div className="card lg:col-span-1">
@@ -162,9 +209,25 @@ export default function SalesPage() {
 							<div className="card lg:col-span-2">
 								<div className="flex items-center justify-between mb-4">
 									<h2 className="text-lg font-medium text-gray-900">Add Products</h2>
-									<div className="relative w-80">
-										<MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-										<input className="input-field pl-10" placeholder="Search products..." value={query} onChange={(e) => { setQuery(e.target.value); loadProducts(e.target.value) }} />
+									<div className="flex items-center gap-2">
+										<div className="relative w-80">
+											<MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+											<input className="input-field pl-10 pr-10" placeholder="Search products..." value={query} onChange={(e) => { setQuery(e.target.value); loadProducts(e.target.value) }} />
+											{query && (
+												<button
+													type="button"
+													className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+													aria-label="Clear search"
+													onClick={() => { setQuery(''); loadProducts('') }}
+												>
+													<XMarkIcon className="h-5 w-5" />
+												</button>
+											)}
+										</div>
+										<button type="button" className="btn-secondary flex items-center" title="Scan to search" onClick={() => setScanOpen(true)}>
+											<QrCodeIcon className="h-5 w-5 mr-2" />
+											Scan
+										</button>
 									</div>
 								</div>
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-auto">
