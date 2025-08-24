@@ -1,12 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, QrCodeIcon } from '@heroicons/react/24/outline'
 import { Dialog } from '@headlessui/react'
 import toast from 'react-hot-toast'
 import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+import Barcode from '@/components/Barcode'
+
+// Lazy-load camera-heavy components on client only
+const Scanner = dynamic(() => import('@/components/Scanner'), { ssr: false })
 
 interface Product {
   _id: string
@@ -37,6 +42,8 @@ export default function ProductsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [scanSearchOpen, setScanSearchOpen] = useState(false)
+  const [barcodeProduct, setBarcodeProduct] = useState<Product | null>(null)
 
   const categories = ['Electronics', 'Clothing', 'Books', 'Home & Garden', 'Sports', 'Other']
 
@@ -183,6 +190,15 @@ export default function ProductsPage() {
                     />
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setScanSearchOpen(true)}
+                  className="btn-secondary flex items-center"
+                  title="Scan to search"
+                >
+                  <QrCodeIcon className="h-5 w-5 mr-2" />
+                  Scan
+                </button>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
@@ -257,6 +273,13 @@ export default function ProductsPage() {
                                   <MagnifyingGlassIcon className="h-4 w-4" />
                                 </Link>
                                 <button
+                                  onClick={() => setBarcodeProduct(product)}
+                                  className="text-gray-700 hover:text-gray-900"
+                                  title="Show Barcode"
+                                >
+                                  <QrCodeIcon className="h-4 w-4" />
+                                </button>
+                                <button
                                   onClick={() => setEditingProduct(product)}
                                   className="text-blue-600 hover:text-blue-900"
                                 >
@@ -289,6 +312,43 @@ export default function ProductsPage() {
                 product={editingProduct}
                 categories={categories}
               />
+
+              {/* Scan-to-search Modal */}
+              <Dialog open={scanSearchOpen} onClose={() => setScanSearchOpen(false)} className="relative z-50">
+                <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+                <div className="fixed inset-0 flex items-center justify-center p-4">
+                  <Dialog.Panel className="mx-auto max-w-md rounded-lg bg-white p-6 w-full">
+                    <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">Scan to Search</Dialog.Title>
+                    <Scanner
+                      onDetected={(code) => {
+                        setSearchTerm(code)
+                        setScanSearchOpen(false)
+                        toast.success(`Scanned: ${code}`)
+                      }}
+                      onClose={() => setScanSearchOpen(false)}
+                    />
+                  </Dialog.Panel>
+                </div>
+              </Dialog>
+
+              {/* Barcode Modal */}
+              <Dialog open={!!barcodeProduct} onClose={() => setBarcodeProduct(null)} className="relative z-50">
+                <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+                <div className="fixed inset-0 flex items-center justify-center p-4">
+                  <Dialog.Panel className="mx-auto max-w-md rounded-lg bg-white p-6 w-full">
+                    <Dialog.Title className="text-lg font-medium text-gray-900">Barcode</Dialog.Title>
+                    {barcodeProduct && (
+                      <div className="mt-4">
+                        <p className="text-sm text-gray-700 mb-2">{barcodeProduct.name}</p>
+                        <Barcode value={barcodeProduct.sku} />
+                      </div>
+                    )}
+                    <div className="mt-4 flex justify-end">
+                      <button className="btn-secondary" onClick={() => setBarcodeProduct(null)}>Close</button>
+                    </div>
+                  </Dialog.Panel>
+                </div>
+              </Dialog>
             </div>
           </div>
         </main>
@@ -317,6 +377,7 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
     gstPercent: '5',
     location: '',
   })
+  const [scanSkuOpen, setScanSkuOpen] = useState(false)
 
   useEffect(() => {
     if (product) {
@@ -389,13 +450,29 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">SKU</label>
-              <input
-                type="text"
-                required
-                value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className="input-field"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  value={formData.sku}
+                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  className="input-field flex-1"
+                />
+                <button
+                  type="button"
+                  className="btn-secondary flex items-center whitespace-nowrap"
+                  onClick={() => setScanSkuOpen(true)}
+                  title="Scan SKU"
+                >
+                  <QrCodeIcon className="h-5 w-5 mr-1" /> Scan
+                </button>
+              </div>
+              {formData.sku && (
+                <div className="mt-2 p-3 rounded border border-gray-200">
+                  <p className="text-xs text-gray-500 mb-2">Barcode preview for SKU</p>
+                  <Barcode value={formData.sku} height={60} />
+                </div>
+              )}
             </div>
 
             <div>
@@ -515,6 +592,24 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
           </form>
         </Dialog.Panel>
       </div>
+
+      {/* Scan SKU Modal */}
+      <Dialog open={scanSkuOpen} onClose={() => setScanSkuOpen(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="mx-auto max-w-md rounded-lg bg-white p-6 w-full">
+            <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">Scan SKU</Dialog.Title>
+            <Scanner
+              onDetected={(code) => {
+                setFormData((prev) => ({ ...prev, sku: code }))
+                setScanSkuOpen(false)
+                toast.success(`SKU scanned: ${code}`)
+              }}
+              onClose={() => setScanSkuOpen(false)}
+            />
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </Dialog>
   )
 }
