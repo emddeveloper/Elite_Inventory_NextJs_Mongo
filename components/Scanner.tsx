@@ -8,12 +8,32 @@ interface ScannerProps {
   onClose?: () => void
   constraints?: MediaTrackConstraints
   className?: string
+  beep?: boolean
+  closeOnDetect?: boolean
 }
 
-export default function Scanner({ onDetected, onClose, constraints, className }: ScannerProps) {
+export default function Scanner({ onDetected, onClose, constraints, className, beep = true, closeOnDetect = true }: ScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [active, setActive] = useState(false)
+  const handledRef = useRef(false)
+
+  function playBeep() {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const o = ctx.createOscillator()
+      const g = ctx.createGain()
+      o.type = 'sine'
+      o.frequency.setValueAtTime(880, ctx.currentTime) // A5
+      g.gain.setValueAtTime(0.001, ctx.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01)
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15)
+      o.connect(g)
+      g.connect(ctx.destination)
+      o.start()
+      o.stop(ctx.currentTime + 0.16)
+    } catch {}
+  }
 
   useEffect(() => {
     const codeReader = new BrowserMultiFormatReader()
@@ -34,11 +54,18 @@ export default function Scanner({ onDetected, onClose, constraints, className }:
               // Basic cleanup
               const code = text.trim()
               if (code) {
+                if (handledRef.current) return
+                handledRef.current = true
                 try { console.debug('[Scanner] Detected code:', code) } catch {}
+                if (beep) playBeep()
                 stopped = true
-                codeReader.reset()
+                try { codeReader.reset() } catch {}
                 setActive(false)
                 onDetected(code)
+                // auto-close parent modal if requested
+                if (closeOnDetect && onClose) {
+                  try { onClose() } catch {}
+                }
               }
             }
           }
@@ -54,6 +81,7 @@ export default function Scanner({ onDetected, onClose, constraints, className }:
 
     return () => {
       stopped = true
+      handledRef.current = false
       try { codeReader.reset() } catch {}
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
