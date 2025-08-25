@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { SparklesIcon } from '@heroicons/react/24/solid'
+import { ComputerDesktopIcon, CpuChipIcon, DevicePhoneMobileIcon, CameraIcon } from '@heroicons/react/24/outline'
+import company from '@/company.json'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -46,8 +48,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-indigo-50 via-fuchsia-50 to-emerald-50">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 overflow-hidden bg-gradient-to-br from-indigo-50 via-fuchsia-50 to-emerald-50">
+      {/* Decorative background icons */}
+      <div className="pointer-events-none absolute inset-0 opacity-40">
+        <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-gradient-to-br from-indigo-300 to-indigo-100 blur-3xl"></div>
+        <div className="absolute -bottom-28 -right-28 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-violet-300 to-pink-100 blur-3xl"></div>
+        <ComputerDesktopIcon className="absolute top-16 left-10 h-28 w-28 text-indigo-500/50" />
+        <CpuChipIcon className="absolute top-1/3 right-16 h-24 w-24 text-fuchsia-500/50 rotate-12" />
+        <DevicePhoneMobileIcon className="absolute bottom-28 left-1/4 h-20 w-20 text-emerald-500/50 -rotate-12" />
+        <CameraIcon className="absolute bottom-12 right-1/4 h-28 w-28 text-slate-600/50" />
+        {/* subtle repeated motif */}
+        <CpuChipIcon className="absolute top-1/4 left-1/2 h-16 w-16 text-indigo-400/30" />
+        <CameraIcon className="absolute bottom-1/3 left-8 h-16 w-16 text-slate-500/30" />
+      </div>
+
+      <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <div className="mx-auto h-12 w-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-primary-600 via-fuchsia-600 to-violet-600 shadow-lg">
             <SparklesIcon className="h-6 w-6 text-white" />
@@ -55,6 +70,10 @@ export default function LoginPage() {
           <h1 className="mt-4 text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 via-fuchsia-600 to-violet-700">
             Elite Inventory Manager
           </h1>
+          {/* Company name (word art style) */}
+          <p className="mt-1 text-3xl md:text-4xl font-extrabold tracking-wide drop-shadow-sm bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500">
+            {company.name}
+          </p>
           <p className="mt-2 text-sm text-gray-500">Sign in to continue</p>
         </div>
 
