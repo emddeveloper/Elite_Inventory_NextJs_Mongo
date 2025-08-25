@@ -49,18 +49,6 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 py-12 overflow-hidden bg-gradient-to-br from-indigo-50 via-fuchsia-50 to-emerald-50">
-      {/* Decorative background icons */}
-      <div className="pointer-events-none absolute inset-0 opacity-40">
-        <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-gradient-to-br from-indigo-300 to-indigo-100 blur-3xl"></div>
-        <div className="absolute -bottom-28 -right-28 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-violet-300 to-pink-100 blur-3xl"></div>
-        <ComputerDesktopIcon className="absolute top-16 left-10 h-28 w-28 text-indigo-500/50" />
-        <CpuChipIcon className="absolute top-1/3 right-16 h-24 w-24 text-fuchsia-500/50 rotate-12" />
-        <DevicePhoneMobileIcon className="absolute bottom-28 left-1/4 h-20 w-20 text-emerald-500/50 -rotate-12" />
-        <CameraIcon className="absolute bottom-12 right-1/4 h-28 w-28 text-slate-600/50" />
-        {/* subtle repeated motif */}
-        <CpuChipIcon className="absolute top-1/4 left-1/2 h-16 w-16 text-indigo-400/30" />
-        <CameraIcon className="absolute bottom-1/3 left-8 h-16 w-16 text-slate-500/30" />
-      </div>
 
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
