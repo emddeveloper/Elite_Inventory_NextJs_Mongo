@@ -25,6 +25,7 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
   const [openScanner, setOpenScanner] = useState(false)
   // Desktop clock
   const [now, setNow] = useState<Date | null>(null)
+  const [backupLoading, setBackupLoading] = useState(false)
 
   // Poll low-stock products every 10s
   useEffect(() => {
@@ -156,6 +157,31 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
       await fetch('/api/auth/logout', { method: 'POST' })
     } finally {
       router.replace('/login')
+    }
+  }
+
+  async function takeBackup() {
+    try {
+      setBackupLoading(true)
+      const res = await fetch('/api/admin/export?zip=1')
+      if (!res.ok) throw new Error('Failed to prepare backup')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const ts = new Date()
+      const pad = (n: number) => String(n).padStart(2, '0')
+      const filename = `backup-${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.zip`
+      a.href = url
+      a.download = filename
+      a.rel = 'noopener'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      // noop; optionally show a toast
+    } finally {
+      setBackupLoading(false)
     }
   }
 
@@ -310,7 +336,16 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
                       onClick={() => { setOpenUserMenu(false); router.push('/admin/users') }}
                       className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
-                      Manage Users
+                      Manage Users 👑
+                    </button>
+                  )}
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={() => { setOpenUserMenu(false); takeBackup() }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      disabled={backupLoading}
+                    >
+                      {backupLoading ? 'Preparing Backup…' : 'Take Backup 👑'}
                     </button>
                   )}
                   <button
