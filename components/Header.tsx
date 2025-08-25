@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Bars3Icon, BellIcon, MagnifyingGlassIcon, QrCodeIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, BellIcon, MagnifyingGlassIcon, QrCodeIcon, XMarkIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 import { UserCircleIcon } from '@heroicons/react/24/solid'
 import { useRouter } from 'next/navigation'
 import Scanner from '@/components/Scanner'
@@ -274,6 +274,16 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
           <div className="hidden lg:flex items-center text-sm font-medium text-gray-700 tabular-nums" aria-label="Current time">
             {now ? now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}
           </div>
+          {/* Help icon */}
+          <button
+            type="button"
+            onClick={() => router.push('/help')}
+            className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-600"
+            title="Help / User Guide"
+            aria-label="Help"
+          >
+            <QuestionMarkCircleIcon className="h-7 w-7" aria-hidden="true" />
+          </button>
           <div className="relative">
             <button type="button" onClick={() => setOpenNotifs(!openNotifs)} className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
               <span className="sr-only">View notifications</span>

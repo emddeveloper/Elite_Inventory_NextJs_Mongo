@@ -40,6 +40,11 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Allow help page for all authenticated users regardless of menus
+  if (pathname === '/help' || pathname.startsWith('/help/')) {
+    return NextResponse.next()
+  }
+
   // Enforce menu-based access if provided (admins bypass)
   if (user.role !== 'admin' && user.menus && user.menus.length > 0) {
     const allowed = user.menus.some(m => pathname === m || pathname.startsWith(m + '/'))
