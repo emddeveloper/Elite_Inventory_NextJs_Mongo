@@ -14,6 +14,7 @@ import {
   DocumentTextIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  QrCodeIcon,
 } from '@heroicons/react/24/outline'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -24,12 +25,13 @@ const navigation = [
   { name: 'Products', href: '/products', icon: CubeIcon },
   { name: 'Sales', href: '/sales', icon: ChartBarIcon },
   { name: 'Transactions', href: '/transactions', icon: DocumentTextIcon },
-  { name: 'Inventory Ledger', href: '/ledger', icon: DocumentTextIcon },
-  { name: 'Inventory', href: '/inventory', icon: DocumentTextIcon },
+  { name: 'Ledger', href: '/ledger', icon: DocumentTextIcon },
+  { name: 'Inventory Update 👑', href: '/inventory', icon: DocumentTextIcon },
   { name: 'Suppliers', href: '/suppliers', icon: TruckIcon },
   { name: 'Customers', href: '/customers', icon: UsersIcon },
   { name: 'Reports', href: '/reports', icon: ChartBarIcon },
   { name: 'Settings', href: '/settings', icon: CogIcon },
+  { name: 'Barcode Generator 👑', href: '/barcode-generator', icon: QrCodeIcon },
 ]
 
 function classNames(...classes: string[]) {

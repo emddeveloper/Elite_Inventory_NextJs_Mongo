@@ -10,8 +10,9 @@ export const roleMenus: Record<string, string[]> = {
     '/customers',
     '/reports',
     '/settings',
+    '/barcode-generator',
   ],
-  manager: ['/', '/products', '/sales', '/transactions', '/ledger', '/reports'],
+  manager: ['/', '/products', '/sales', '/transactions', '/ledger', '/reports', '/barcode-generator'],
   staff: ['/', '/products', '/sales'],
 }
 

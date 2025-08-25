@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Dialog } from '@headlessui/react'
-import { XMarkIcon, PrinterIcon, ArrowDownTrayIcon, PaperAirplaneIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, PrinterIcon, ArrowDownTrayIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 import { downloadPDF } from '@/lib/pdf-utils'
 
 export type ClientInfo = {
@@ -140,7 +140,18 @@ export default function PdfViewerModal({ open, onClose, pdfBlob, filename, clien
           <div className="flex flex-wrap gap-2 p-3 border-b">
             <button onClick={printPdf} className="btn-secondary inline-flex items-center gap-2"><PrinterIcon className="h-4 w-4" /> Print</button>
             <button onClick={savePdf} className="btn-secondary inline-flex items-center gap-2"><ArrowDownTrayIcon className="h-4 w-4" /> Save</button>
-            <button onClick={shareWhatsApp} className="btn-secondary inline-flex items-center gap-2"><PaperAirplaneIcon className="h-4 w-4" /> Share WhatsApp</button>
+            <button onClick={shareWhatsApp} className="btn-secondary inline-flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 32 32"
+                aria-hidden="true"
+                className="h-4 w-4 text-[#25D366]"
+              >
+                <path fill="currentColor" d="M19.11 17.83c-.27-.14-1.62-.8-1.87-.9-.25-.09-.43-.14-.62.14-.18.27-.71.9-.87 1.08-.16.18-.32.2-.59.07-.27-.14-1.12-.41-2.13-1.31-.79-.7-1.32-1.57-1.47-1.84-.15-.27-.02-.42.11-.56.11-.11.27-.29.41-.43.14-.14.18-.25.27-.43.09-.18.05-.34-.02-.48-.07-.14-.62-1.49-.85-2.04-.22-.53-.45-.46-.62-.47-.16-.01-.34-.01-.52-.01s-.48.07-.73.34c-.25.27-.96.94-.96 2.3 0 1.36.99 2.67 1.13 2.85.14.18 1.96 3.1 4.75 4.35.66.29 1.17.46 1.57.59.66.21 1.26.18 1.73.11.53-.08 1.62-.66 1.85-1.3.23-.64.23-1.19.16-1.3-.07-.11-.25-.18-.52-.32z"/>
+                <path fill="currentColor" d="M26.6 5.4A12.55 12.55 0 0 0 5.4 26.6L4 30l3.5-1.37A12.55 12.55 0 0 0 26.6 5.4m-1.44 19.76A10.51 10.51 0 1 1 7.04 7.04a10.51 10.51 0 0 1 18.12 18.12z"/>
+              </svg>
+              Share WhatsApp 👑
+            </button>
             <button onClick={shareEmail} className="btn-secondary inline-flex items-center gap-2"><EnvelopeIcon className="h-4 w-4" /> Share Email</button>
           </div>
 
