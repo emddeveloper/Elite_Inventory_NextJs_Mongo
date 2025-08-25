@@ -40,7 +40,8 @@ function classNames(...classes: string[]) {
 
 export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const pathname = usePathname()
-  const [menus, setMenus] = useState<string[]>([])
+  // null means loading; [] means unrestricted (e.g., admin) or no menus assigned
+  const [menus, setMenus] = useState<string[] | null>(null)
   const [collapsed, setCollapsed] = useState<boolean>(false)
 
   useEffect(() => {
@@ -76,9 +77,12 @@ export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (op
     } catch {}
   }, [collapsed])
 
-  const navToRender = menus && menus.length > 0
-    ? navigation.filter((item) => menus.some((m) => item.href === m || item.href.startsWith(m + '/')))
-    : navigation
+  // While loading (menus === null), render no items to avoid flash of all menus
+  const navToRender = menus === null
+    ? []
+    : (menus.length > 0
+        ? navigation.filter((item) => menus.some((m) => item.href === m || item.href.startsWith(m + '/')))
+        : navigation)
 
   return (
     <>
