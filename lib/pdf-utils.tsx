@@ -1,6 +1,7 @@
 import React from 'react'
 import { pdf } from '@react-pdf/renderer'
 import InvoicePDF from '@/components/InvoicePDF'
+import companyConfig from '@/company.json'
 
 interface InvoiceItem {
   name: string
@@ -76,21 +77,5 @@ export const downloadPDF = (blob: Blob, filename: string) => {
   URL.revokeObjectURL(url)
 }
 
-// Default company data - this should be fetched from API in production
-export const getDefaultCompany = (): Company => ({
-  name: 'Akash Enterprises',
-  address: '123 Business Street, Business District, City, State 12345',
-  phone: '+1 (555) 123-4567',
-  email: 'info@akashenterprises.com',
-  website: 'www.akashenterprises.com',
-  gstin: '22AAAAA0000A1Z5',
-  pan: 'AAAAA0000A',
-  bank: {
-    accountHolder: 'Akash Enterprises',
-    accountNumber: '1234567890',
-    bankName: 'State Bank of India',
-    branch: 'Main Branch',
-    ifsc: 'SBIN0001234',
-    upi: 'akash@paytm'
-  }
-})
+// Company data sourced from configuration (company.json). In production, consider fetching from an API.
+export const getDefaultCompany = (): Company => (companyConfig as Company)

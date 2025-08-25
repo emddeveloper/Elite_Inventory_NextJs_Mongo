@@ -28,6 +28,7 @@ interface ProductRef { _id: string; name: string; sku: string }
 
 export default function InventoryLedgerPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [items, setItems] = useState<LedgerItem[]>([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -44,6 +45,25 @@ export default function InventoryLedgerPage() {
   const [products, setProducts] = useState<ProductRef[]>([])
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit])
+
+  // Sync content padding with sidebar collapsed state
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('sidebar_collapsed')
+      if (v != null) setSidebarCollapsed(v === '1')
+    } catch {}
+    function onCollapseChanged(e: any) {
+      try {
+        if (e && e.detail && typeof e.detail.collapsed === 'boolean') {
+          setSidebarCollapsed(e.detail.collapsed)
+        }
+      } catch {}
+    }
+    window.addEventListener('sidebar:collapse-changed', onCollapseChanged as EventListener)
+    return () => {
+      window.removeEventListener('sidebar:collapse-changed', onCollapseChanged as EventListener)
+    }
+  }, [])
 
   useEffect(() => {
     // Load a small list of products for filtering (first 100)
@@ -194,7 +214,7 @@ export default function InventoryLedgerPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-      <div className="lg:pl-72">
+      <div className={sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}>
         <Header setSidebarOpen={setSidebarOpen} />
         <main className="py-10">
           <div className="px-4 sm:px-6 lg:px-8 space-y-6">
@@ -205,7 +225,7 @@ export default function InventoryLedgerPage() {
               </div>
               <div className="flex gap-2">
                 <button onClick={exportCsv} className="btn-secondary">Export CSV</button>
-                <button onClick={seedLedger} className="btn-secondary">Seed Dummy Data</button>
+                {/* <button onClick={seedLedger} className="btn-secondary">Seed Dummy Data</button> */}
               </div>
             </div>
 

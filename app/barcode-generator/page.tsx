@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
 import { generateBarcodeDataUrl, BarcodeFormat } from '@/lib/barcode-utils'
@@ -19,6 +19,7 @@ type SizeKey = keyof typeof sizePresets
 
 export default function BarcodeGeneratorPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   // Form state
   const [count, setCount] = useState<number>(100)
@@ -35,6 +36,25 @@ export default function BarcodeGeneratorPage() {
   const [filename, setFilename] = useState<string>('')
 
   const uniqueCount = useMemo(() => Math.ceil((count || 0) / (repeat || 1)), [count, repeat])
+
+  // Sync content padding with sidebar collapsed state
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('sidebar_collapsed')
+      if (v != null) setSidebarCollapsed(v === '1')
+    } catch {}
+    function onCollapseChanged(e: any) {
+      try {
+        if (e && e.detail && typeof e.detail.collapsed === 'boolean') {
+          setSidebarCollapsed(e.detail.collapsed)
+        }
+      } catch {}
+    }
+    window.addEventListener('sidebar:collapse-changed', onCollapseChanged as EventListener)
+    return () => {
+      window.removeEventListener('sidebar:collapse-changed', onCollapseChanged as EventListener)
+    }
+  }, [])
 
   const generateValues = () => {
     const values: string[] = []
@@ -76,7 +96,7 @@ export default function BarcodeGeneratorPage() {
   return (
     <div>
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-      <div className="lg:pl-72">
+      <div className={sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}>
         <Header setSidebarOpen={setSidebarOpen} />
         <main className="py-6">
           <div className="px-4 sm:px-6 lg:px-8">

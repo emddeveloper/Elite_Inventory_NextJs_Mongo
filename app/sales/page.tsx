@@ -21,6 +21,7 @@ type Product = {
 
 export default function SalesPage() {
 	const [sidebarOpen, setSidebarOpen] = useState(false)
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 	const [client, setClient] = useState({ name: '', address: '', email: '', whatsapp: '' })
 	const [query, setQuery] = useState('')
 	const [products, setProducts] = useState<Product[]>([])
@@ -37,6 +38,27 @@ export default function SalesPage() {
 
 	useEffect(() => {
 		loadProducts('')
+	}, [])
+
+	// Sync content padding with sidebar collapsed state
+	useEffect(() => {
+		// initial from localStorage
+		try {
+			const v = localStorage.getItem('sidebar_collapsed')
+			if (v != null) setSidebarCollapsed(v === '1')
+		} catch {}
+		// subscribe to changes
+		function onCollapseChanged(e: any) {
+			try {
+				if (e && e.detail && typeof e.detail.collapsed === 'boolean') {
+					setSidebarCollapsed(e.detail.collapsed)
+				}
+			} catch {}
+		}
+		window.addEventListener('sidebar:collapse-changed', onCollapseChanged as EventListener)
+		return () => {
+			window.removeEventListener('sidebar:collapse-changed', onCollapseChanged as EventListener)
+		}
 	}, [])
 
 	const loadProducts = async (search: string) => {
@@ -147,186 +169,191 @@ export default function SalesPage() {
 	return (
 		<div className="min-h-screen bg-gray-50">
 			<Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-			<div className="lg:pl-72">
-				<Header setSidebarOpen={setSidebarOpen} />
-				<main className="py-10">
-					<div className="px-4 sm:px-6 lg:px-8 space-y-6">
-						<div className="flex items-center justify-between">
-							<h1 className="text-2xl font-bold text-gray-900">Sales</h1>
-						</div>
-
-						{/* Scanner Modal */}
-						<Dialog open={scanOpen} onClose={() => setScanOpen(false)} className="relative z-50">
-							<div className="fixed inset-0 bg-black/40" aria-hidden="true" />
-							<div className="fixed inset-0 flex items-center justify-center p-4">
-								<Dialog.Panel className="mx-auto w-full max-w-md rounded bg-white p-4">
-									<Dialog.Title className="text-lg font-medium mb-2">Scan to Search</Dialog.Title>
-									<Scanner
-										className="w-full"
-										onDetected={async (code) => {
-											const value = (code || '').trim()
-											if (!value) return
-											setQuery(value)
-											try {
-												const params = new URLSearchParams()
-												params.append('search', value)
-												params.append('limit', '20')
-												const res = await fetch(`/api/products?${params.toString()}`)
-												const data = await res.json()
-												if (res.ok && Array.isArray(data.products) && data.products.length) {
-													const exact = data.products.find((p: any) => String(p.sku).toLowerCase() === value.toLowerCase())
-													const chosen = exact || data.products[0]
-													addItem(chosen)
-												} else {
-													try { toast.error('No matching product found') } catch {}
-												}
-											} catch {}
-											finally {
-												await loadProducts('')
-											}
-										}}
-										onClose={() => setScanOpen(false)}
-										beep
-										closeOnDetect
-									/>
-									<div className="mt-3 flex justify-end">
-										<button className="btn-secondary" onClick={() => setScanOpen(false)}>Close</button>
-									</div>
-								</Dialog.Panel>
-							</div>
-						</Dialog>
-
-						<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-							{/* Client Details */}
-							<div className="card lg:col-span-1">
-								<h2 className="text-lg font-medium text-gray-900 mb-4">Client Details</h2>
-								<div className="space-y-4">
-									<input className="input-field" placeholder="Name" value={client.name} onChange={(e) => setClient({ ...client, name: e.target.value })} />
-									<textarea className="input-field" placeholder="Address" rows={3} value={client.address} onChange={(e) => setClient({ ...client, address: e.target.value })} />
-									<input className="input-field" placeholder="Email" type="email" value={client.email} onChange={(e) => setClient({ ...client, email: e.target.value })} />
-									<input className="input-field" placeholder="WhatsApp" value={client.whatsapp} onChange={(e) => setClient({ ...client, whatsapp: e.target.value })} />
+			{(() => {
+				const contentPadding = sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'
+				return (
+					<div className={`${contentPadding}`}>
+						<Header setSidebarOpen={setSidebarOpen} />
+						<main className="py-10">
+							<div className="px-4 sm:px-6 lg:px-8 space-y-6">
+								<div className="flex items-center justify-between">
+									<h1 className="text-2xl font-bold text-gray-900">Sales</h1>
 								</div>
-							</div>
 
-							{/* Product Picker */}
-							<div className="card lg:col-span-2">
-								<div className="flex items-center justify-between mb-4">
-									<h2 className="text-lg font-medium text-gray-900">Add Products</h2>
-									<div className="flex w-full sm:w-auto sm:flex-none sm:items-center gap-2 sm:justify-end flex-col sm:flex-row">
-										<div className="relative w-full sm:w-80">
-											<MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-											<input className="input-field pl-10 pr-10 w-full" placeholder="Search products..." value={query} onChange={(e) => { setQuery(e.target.value); loadProducts(e.target.value) }} />
-											{query && (
-												<button
-													type="button"
-													className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
-													aria-label="Clear search"
-													onClick={() => { setQuery(''); loadProducts('') }}
-												>
-													<XMarkIcon className="h-5 w-5" />
+								{/* Scanner Modal */}
+								<Dialog open={scanOpen} onClose={() => setScanOpen(false)} className="relative z-50">
+									<div className="fixed inset-0 bg-black/40" aria-hidden="true" />
+									<div className="fixed inset-0 flex items-center justify-center p-4">
+										<Dialog.Panel className="mx-auto w-full max-w-md rounded bg-white p-4">
+											<Dialog.Title className="text-lg font-medium mb-2">Scan to Search</Dialog.Title>
+											<Scanner
+												className="w-full"
+												onDetected={async (code) => {
+													const value = (code || '').trim()
+													if (!value) return
+													setQuery(value)
+													try {
+														const params = new URLSearchParams()
+														params.append('search', value)
+														params.append('limit', '20')
+														const res = await fetch(`/api/products?${params.toString()}`)
+														const data = await res.json()
+														if (res.ok && Array.isArray(data.products) && data.products.length) {
+															const exact = data.products.find((p: any) => String(p.sku).toLowerCase() === value.toLowerCase())
+															const chosen = exact || data.products[0]
+															addItem(chosen)
+														} else {
+															try { toast.error('No matching product found') } catch {}
+														}
+													} catch {}
+													finally {
+														await loadProducts('')
+													}
+												}}
+												onClose={() => setScanOpen(false)}
+												beep
+												closeOnDetect
+											/>
+											<div className="mt-3 flex justify-end">
+												<button className="btn-secondary" onClick={() => setScanOpen(false)}>Close</button>
+											</div>
+										</Dialog.Panel>
+									</div>
+								</Dialog>
+
+								<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+									{/* Client Details */}
+									<div className="card lg:col-span-1">
+										<h2 className="text-lg font-medium text-gray-900 mb-4">Client Details</h2>
+										<div className="space-y-4">
+											<input className="input-field" placeholder="Name" value={client.name} onChange={(e) => setClient({ ...client, name: e.target.value })} />
+											<textarea className="input-field" placeholder="Address" rows={3} value={client.address} onChange={(e) => setClient({ ...client, address: e.target.value })} />
+											<input className="input-field" placeholder="Email" type="email" value={client.email} onChange={(e) => setClient({ ...client, email: e.target.value })} />
+											<input className="input-field" placeholder="WhatsApp" value={client.whatsapp} onChange={(e) => setClient({ ...client, whatsapp: e.target.value })} />
+										</div>
+									</div>
+
+									{/* Product Picker */}
+									<div className="card lg:col-span-2">
+										<div className="flex items-center justify-between mb-4">
+											<h2 className="text-lg font-medium text-gray-900">Add Products</h2>
+											<div className="flex w-full sm:w-auto sm:flex-none sm:items-center gap-2 sm:justify-end flex-col sm:flex-row">
+												<div className="relative w-full sm:w-80">
+													<MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+													<input className="input-field pl-10 pr-10 w-full" placeholder="Search products..." value={query} onChange={(e) => { setQuery(e.target.value); loadProducts(e.target.value) }} />
+													{query && (
+														<button
+															type="button"
+															className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+															aria-label="Clear search"
+															onClick={() => { setQuery(''); loadProducts('') }}
+														>
+															<XMarkIcon className="h-5 w-5" />
+														</button>
+													)}
+												</div>
+												<button type="button" className="btn-secondary flex items-center w-full sm:w-auto justify-center" title="Scan to search" onClick={() => setScanOpen(true)}>
+													<QrCodeIcon className="h-5 w-5 mr-2" />
+													Scan
 												</button>
-											)}
-										</div>
-										<button type="button" className="btn-secondary flex items-center w-full sm:w-auto justify-center" title="Scan to search" onClick={() => setScanOpen(true)}>
-											<QrCodeIcon className="h-5 w-5 mr-2" />
-											Scan
-										</button>
-									</div>
-								</div>
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-auto">
-									{loadingProducts ? (
-										<div className="text-sm text-gray-500">Loading...</div>
-									) : products.length === 0 ? (
-										<div className="text-sm text-gray-500">No products</div>
-									) : products.map(p => (
-										<div key={p._id} className="flex items-center justify-between border rounded-md p-3">
-											<div>
-												<div className="font-medium text-gray-900">{p.name}</div>
-												<div className="text-xs text-gray-500">{p.sku}</div>
-											</div>
-											<div className="flex items-center space-x-3">
-												<div className="text-sm text-gray-700">{`$${p.price.toFixed(2)}`}</div>
-												<button onClick={() => addItem(p)} className="btn-primary flex items-center"><PlusIcon className="h-4 w-4 mr-1" /> Add</button>
 											</div>
 										</div>
-									))}
-								</div>
-							</div>
-						</div>
-
-						{/* Items & Overview */}
-						<div className="card">
-							<h2 className="text-lg font-medium text-gray-900 mb-4">Order Items</h2>
-							<div className="overflow-x-auto">
-								<table className="min-w-full divide-y divide-gray-200">
-									<thead className="bg-gray-50">
-										<tr>
-											<th className="table-header">Product</th>
-											<th className="table-header">SKU</th>
-											<th className="table-header">Qty</th>
-											<th className="table-header">Unit</th>
-											<th className="table-header">Total</th>
-											<th className="table-header">Actions</th>
-										</tr>
-									</thead>
-									<tbody className="bg-white divide-y divide-gray-200">
-										{items.length === 0 ? (
-											<tr>
-												<td className="table-cell text-center" colSpan={6}>No items</td>
-											</tr>
-										) : items.map(it => (
-											<tr key={it.productId}>
-												<td className="table-cell">{it.name}</td>
-												<td className="table-cell font-mono">{it.sku}</td>
-												<td className="table-cell">
-													<input type="number" min={1} value={it.quantity} onChange={(e) => updateQty(it.productId, parseInt(e.target.value || '1'))} className="input-field w-24" />
-												</td>
-												<td className="table-cell">{`$${it.unitPrice.toFixed(2)}`}</td>
-												<td className="table-cell">{`$${it.lineTotal.toFixed(2)}`}</td>
-												<td className="table-cell">
-													<button onClick={() => removeItem(it.productId)} className="text-red-600 hover:text-red-800 inline-flex items-center"><TrashIcon className="h-4 w-4 mr-1" /> Remove</button>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-
-							<div className="flex justify-end mt-4">
-								<div className="w-80 space-y-2 text-sm">
-									<div className="flex items-center justify-between">
-										<label className="text-gray-600">Discount</label>
-										<div className="flex items-center space-x-2">
-											<select value={discountMode} onChange={(e) => setDiscountMode(e.target.value as any)} className="input-field w-36">
-												<option value="percent">Percent (%)</option>
-												<option value="amount">Amount</option>
-											</select>
-											{discountMode === 'percent' ? (
-												<>
-													<input type="number" min={0} max={100} value={discountPercent} onChange={(e) => setDiscountPercent(Number(e.target.value || '0'))} className="input-field w-24" />
-													<span className="text-sm text-gray-500">%</span>
-												</>
-											) : (
-												<>
-													<input type="number" min={0} max={subtotal} value={discountAmount} onChange={(e) => setDiscountAmount(Number(e.target.value || '0'))} className="input-field w-36" />
-													<span className="text-sm text-gray-500">{`$`}</span>
-												</>
-											)}
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-auto">
+											{loadingProducts ? (
+												<div className="text-sm text-gray-500">Loading...</div>
+											) : products.length === 0 ? (
+												<div className="text-sm text-gray-500">No products</div>
+											) : products.map(p => (
+												<div key={p._id} className="flex items-center justify-between border rounded-md p-3">
+													<div>
+														<div className="font-medium text-gray-900">{p.name}</div>
+														<div className="text-xs text-gray-500">{p.sku}</div>
+													</div>
+													<div className="flex items-center space-x-3">
+														<div className="text-sm text-gray-700">{`$${p.price.toFixed(2)}`}</div>
+														<button onClick={() => addItem(p)} className="btn-primary flex items-center"><PlusIcon className="h-4 w-4 mr-1" /> Add</button>
+													</div>
+												</div>
+											))}
 										</div>
 									</div>
-									<div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">{`$${subtotal.toFixed(2)}`}</span></div>
-									<div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">{`$${tax.toFixed(2)}`}</span></div>
-									<div className="flex justify-between"><span className="text-gray-600">Discount</span><span className="font-medium">-{`$${discount.toFixed(2)}`}</span></div>
-									<div className="flex justify-between text-base"><span>Total</span><span className="font-semibold">{`$${total.toFixed(2)}`}</span></div>
-									<div className="pt-2 flex justify-end">
-										<button disabled={submitting} onClick={submit} className="btn-primary">{submitting ? 'Submitting...' : 'Submit & Generate Invoice'}</button>
+								</div>
+
+								{/* Items & Overview */}
+								<div className="card">
+									<h2 className="text-lg font-medium text-gray-900 mb-4">Order Items</h2>
+									<div className="overflow-x-auto">
+										<table className="min-w-full divide-y divide-gray-200">
+											<thead className="bg-gray-50">
+												<tr>
+													<th className="table-header">Product</th>
+													<th className="table-header">SKU</th>
+													<th className="table-header">Qty</th>
+													<th className="table-header">Unit</th>
+													<th className="table-header">Total</th>
+													<th className="table-header">Actions</th>
+												</tr>
+											</thead>
+											<tbody className="bg-white divide-y divide-gray-200">
+												{items.length === 0 ? (
+													<tr>
+														<td className="table-cell text-center" colSpan={6}>No items</td>
+													</tr>
+												) : items.map(it => (
+													<tr key={it.productId}>
+														<td className="table-cell">{it.name}</td>
+														<td className="table-cell font-mono">{it.sku}</td>
+														<td className="table-cell">
+															<input type="number" min={1} value={it.quantity} onChange={(e) => updateQty(it.productId, parseInt(e.target.value || '1'))} className="input-field w-24" />
+														</td>
+														<td className="table-cell">{`$${it.unitPrice.toFixed(2)}`}</td>
+														<td className="table-cell">{`$${it.lineTotal.toFixed(2)}`}</td>
+														<td className="table-cell">
+															<button onClick={() => removeItem(it.productId)} className="text-red-600 hover:text-red-800 inline-flex items-center"><TrashIcon className="h-4 w-4 mr-1" /> Remove</button>
+														</td>
+													</tr>
+												))}
+											</tbody>
+										</table>
+									</div>
+
+									<div className="flex justify-end mt-4">
+										<div className="w-80 space-y-2 text-sm">
+											<div className="flex items-center justify-between">
+												<label className="text-gray-600">Discount</label>
+												<div className="flex items-center space-x-2">
+													<select value={discountMode} onChange={(e) => setDiscountMode(e.target.value as any)} className="input-field w-36">
+														<option value="percent">Percent (%)</option>
+														<option value="amount">Amount</option>
+													</select>
+													{discountMode === 'percent' ? (
+														<>
+															<input type="number" min={0} max={100} value={discountPercent} onChange={(e) => setDiscountPercent(Number(e.target.value || '0'))} className="input-field w-24" />
+															<span className="text-sm text-gray-500">%</span>
+														</>
+													) : (
+														<>
+															<input type="number" min={0} max={subtotal} value={discountAmount} onChange={(e) => setDiscountAmount(Number(e.target.value || '0'))} className="input-field w-36" />
+															<span className="text-sm text-gray-500">{`$`}</span>
+														</>
+													)}
+												</div>
+											</div>
+											<div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">{`$${subtotal.toFixed(2)}`}</span></div>
+											<div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">{`$${tax.toFixed(2)}`}</span></div>
+											<div className="flex justify-between"><span className="text-gray-600">Discount</span><span className="font-medium">-{`$${discount.toFixed(2)}`}</span></div>
+											<div className="flex justify-between text-base"><span>Total</span><span className="font-semibold">{`$${total.toFixed(2)}`}</span></div>
+											<div className="pt-2 flex justify-end">
+												<button disabled={submitting} onClick={submit} className="btn-primary">{submitting ? 'Submitting...' : 'Submit & Generate Invoice'}</button>
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>
-						</div>
+						</main>
 					</div>
-				</main>
-			</div>
+				)
+			})()}
 			<PdfViewerModal
 				open={viewerOpen}
 				onClose={() => setViewerOpen(false)}
