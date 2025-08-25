@@ -68,11 +68,11 @@ export async function GET(req: NextRequest) {
       const csv = toCSV(sanitized)
       zip.file(`${name}.csv`, csv || '')
     }
-    const zipBuf = await zip.generateAsync({ type: 'nodebuffer' })
+    const zipArrayBuffer = await zip.generateAsync({ type: 'arraybuffer' })
     const ts = new Date()
     const pad = (n: number) => n.toString().padStart(2, '0')
     const fname = `backup-${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.zip`
-    const res = new NextResponse(zipBuf)
+    const res = new NextResponse(zipArrayBuffer)
     res.headers.set('Content-Type', 'application/zip')
     res.headers.set('Content-Disposition', `attachment; filename="${fname}"`)
     return res

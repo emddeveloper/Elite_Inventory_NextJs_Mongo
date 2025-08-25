@@ -83,6 +83,15 @@ const sections: { key: string; title: string; steps: string[] }[] = [
       'Print single labels or sheets for batch operations.'
     ],
   },
+  {
+    key: 'admin-export',
+    title: 'Admin: Data Export',
+    steps: [
+      'Admins can export individual collections as CSV from the Admin Export API.',
+      'Use the ZIP option to download all collections at once as a .zip archive of CSV files.',
+      'The export is optimized for browsers (uses ArrayBuffer) to ensure downloads work during production builds.'
+    ],
+  },
 ]
 
 export default function HelpPage() {
