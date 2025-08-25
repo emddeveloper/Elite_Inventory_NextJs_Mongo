@@ -126,7 +126,8 @@ export default function SalesPage() {
 						company
 					})
 					setPdfBlob(pdfBlob)
-					setPdfFilename(`${data.transaction.invoiceNumber}.pdf`)
+					const clientNamePart = (client.name || 'CLIENT').trim().replace(/\s+/g, '_').toUpperCase()
+					setPdfFilename(`${data.transaction.invoiceNumber}_${clientNamePart}.pdf`)
 					setViewerOpen(true)
 				} catch (pdfError) {
 					console.error('PDF generation error:', pdfError)

@@ -84,13 +84,27 @@ export default function PdfViewerModal({ open, onClose, pdfBlob, filename, clien
       setNeedWhatsapp(true)
       return
     }
-    const shared = await shareViaNavigator('Invoice', `Invoice for ${localClient.name}`)
-    if (shared) return
-    // Fallback: open wa.me link with message (cannot attach PDF via URL scheme)
-    const msg = encodeURIComponent(`Hello ${localClient.name},\nPlease find your invoice attached.`)
-    const phone = localClient.whatsapp.replace(/\D/g, '')
-    const url = `https://wa.me/${phone}?text=${msg}`
-    window.open(url, '_blank')
+    // Normalize phone to digits only, apply default country code +91 when only 10 digits.
+    let digits = localClient.whatsapp.replace(/\D/g, '')
+    if (digits.length < 10) {
+      // Not enough digits to be a valid mobile number; prompt for input
+      setNeedWhatsapp(true)
+      return
+    }
+    if (digits.length === 10) {
+      digits = `91${digits}`
+    }
+    const message = `Hello ${localClient.name},\nPlease find your invoice.`
+    const encoded = encodeURIComponent(message)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Windows Phone/i.test(navigator.userAgent)
+    const waUrl = `https://wa.me/${digits}?text=${encoded}`
+    if (isMobile) {
+      // On mobile, redirecting to wa.me should hand off to the app
+      window.location.href = waUrl
+    } else {
+      // On desktop, wa.me redirects to WhatsApp Web with the chat preselected
+      window.open(waUrl, '_blank')
+    }
   }
 
   const shareEmail = async () => {
@@ -150,7 +164,7 @@ export default function PdfViewerModal({ open, onClose, pdfBlob, filename, clien
                 {needWhatsapp && (
                   <input
                     className="input-field w-56"
-                    placeholder="WhatsApp number (with country code)"
+                    placeholder="WhatsApp number (default +91)"
                     value={localClient.whatsapp || ''}
                     onChange={(e) => setLocalClient({ ...localClient, whatsapp: e.target.value })}
                   />
