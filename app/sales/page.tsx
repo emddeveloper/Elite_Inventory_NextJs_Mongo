@@ -5,9 +5,10 @@ import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
 import { MagnifyingGlassIcon, PlusIcon, TrashIcon, QrCodeIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import { generateInvoicePDF, downloadPDF, getDefaultCompany } from '@/lib/pdf-utils'
+import { generateInvoicePDF, getDefaultCompany } from '@/lib/pdf-utils'
 import { Dialog } from '@headlessui/react'
 import Scanner from '@/components/Scanner'
+import PdfViewerModal from '@/components/PdfViewerModal'
 
 type Product = {
 	_id: string
@@ -30,6 +31,9 @@ export default function SalesPage() {
 	const [discountAmount, setDiscountAmount] = useState<number>(0)
 	const [discountMode, setDiscountMode] = useState<'percent' | 'amount'>('percent')
 	const [scanOpen, setScanOpen] = useState(false)
+	const [viewerOpen, setViewerOpen] = useState(false)
+	const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
+	const [pdfFilename, setPdfFilename] = useState<string>('invoice.pdf')
 
 	useEffect(() => {
 		loadProducts('')
@@ -96,8 +100,7 @@ export default function SalesPage() {
 			const data = await res.json()
 			if (res.ok) {
 				toast.success('Sale completed')
-				
-				// Generate and download invoice using client-side PDF generation
+				// Generate invoice PDF and open viewer modal
 				try {
 					const company = getDefaultCompany()
 					const invoiceDate = new Date().toLocaleDateString()
@@ -111,7 +114,6 @@ export default function SalesPage() {
 						lineTotal: item.lineTotal,
 						gstPercent: item.gstPercent // Use actual GST percentage from product
 					}))
-					
 					const pdfBlob = await generateInvoicePDF({
 						invoiceNumber: data.transaction.invoiceNumber,
 						invoiceDate,
@@ -123,13 +125,13 @@ export default function SalesPage() {
 						total,
 						company
 					})
-					
-					downloadPDF(pdfBlob, `${data.transaction.invoiceNumber}.pdf`)
+					setPdfBlob(pdfBlob)
+					setPdfFilename(`${data.transaction.invoiceNumber}.pdf`)
+					setViewerOpen(true)
 				} catch (pdfError) {
 					console.error('PDF generation error:', pdfError)
 					toast.error('Failed to generate PDF, but sale was completed')
 				}
-				
 				setItems([])
 			} else {
 				toast.error(data.error || 'Failed to submit sale')
@@ -291,26 +293,26 @@ export default function SalesPage() {
 
 							<div className="flex justify-end mt-4">
 								<div className="w-80 space-y-2 text-sm">
-										<div className="flex items-center justify-between">
-											<label className="text-gray-600">Discount</label>
-											<div className="flex items-center space-x-2">
-												<select value={discountMode} onChange={(e) => setDiscountMode(e.target.value as any)} className="input-field w-36">
-													<option value="percent">Percent (%)</option>
-													<option value="amount">Amount</option>
-												</select>
-												{discountMode === 'percent' ? (
-													<>
-														<input type="number" min={0} max={100} value={discountPercent} onChange={(e) => setDiscountPercent(Number(e.target.value || '0'))} className="input-field w-24" />
-														<span className="text-sm text-gray-500">%</span>
-													</>
-												) : (
-													<>
-														<input type="number" min={0} max={subtotal} value={discountAmount} onChange={(e) => setDiscountAmount(Number(e.target.value || '0'))} className="input-field w-36" />
-														<span className="text-sm text-gray-500">{`$`}</span>
-													</>
-												)}
-											</div>
+									<div className="flex items-center justify-between">
+										<label className="text-gray-600">Discount</label>
+										<div className="flex items-center space-x-2">
+											<select value={discountMode} onChange={(e) => setDiscountMode(e.target.value as any)} className="input-field w-36">
+												<option value="percent">Percent (%)</option>
+												<option value="amount">Amount</option>
+											</select>
+											{discountMode === 'percent' ? (
+												<>
+													<input type="number" min={0} max={100} value={discountPercent} onChange={(e) => setDiscountPercent(Number(e.target.value || '0'))} className="input-field w-24" />
+													<span className="text-sm text-gray-500">%</span>
+												</>
+											) : (
+												<>
+													<input type="number" min={0} max={subtotal} value={discountAmount} onChange={(e) => setDiscountAmount(Number(e.target.value || '0'))} className="input-field w-36" />
+													<span className="text-sm text-gray-500">{`$`}</span>
+												</>
+											)}
 										</div>
+									</div>
 									<div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">{`$${subtotal.toFixed(2)}`}</span></div>
 									<div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">{`$${tax.toFixed(2)}`}</span></div>
 									<div className="flex justify-between"><span className="text-gray-600">Discount</span><span className="font-medium">-{`$${discount.toFixed(2)}`}</span></div>
@@ -324,8 +326,19 @@ export default function SalesPage() {
 					</div>
 				</main>
 			</div>
+			<PdfViewerModal
+				open={viewerOpen}
+				onClose={() => setViewerOpen(false)}
+				pdfBlob={pdfBlob}
+				filename={pdfFilename}
+				client={client}
+				onUpdateClient={(next) => setClient({
+					name: next.name,
+					address: next.address,
+					email: next.email ?? '',
+					whatsapp: next.whatsapp ?? ''
+				})}
+			/>
 		</div>
 	)
 }
-
-
