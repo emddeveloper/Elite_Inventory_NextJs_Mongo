@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { verifyPassword } from './auth-admin'
 
 export type UserRecord = {
   username: string
@@ -24,8 +25,10 @@ function readAuthFile(): { users: UserRecord[] } {
 export function validateCredentials(username: string, password: string): AuthUser | null {
   try {
     const { users } = readAuthFile()
-    const user = users.find(u => u.username === username && u.password === password)
+    const user = users.find(u => u.username === username)
     if (!user) return null
+    // Verify hashed or legacy plaintext password
+    if (!verifyPassword(user.password, password)) return null
     return {
       username: user.username,
       role: user.role,

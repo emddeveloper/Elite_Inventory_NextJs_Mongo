@@ -47,27 +47,18 @@
       "username": "sk",
       "password": "scrypt:2fc9ea0811d172f2b439d2f4e56c454f:c336b47eeb9cbece0cdc2416d3936f4d342207f49acbea1128981829caee0b092237894222704927e1252d2e74c911deb90d176d1176ae4ed22df1ce23bf5fc5",
       "role": "viewer"
-    },
-    {
-      "username": "pankaj",
-      "password": "scrypt:ed507ad2b99a9a34bd864dfe82e85872:afaa6139b66cedc27303ca59a9cce41b9cd62b7f628148b7e2e382c580b1d736da3afa2e44282ea783beb43fb9c3798c121caf118c9d033fa69de52494d55890",
-      "role": "staff",
-      "menus": [
-        "/barcode-generator",
-        "/sales"
-      ]
     }
   ],
-  "AllMenus": [
-    "/",
-    "/products",
-    "/barcode-generator",
-    "/sales",
-    "/transactions",
-    "/ledger",
-    "/inventory",
-    "/suppliers",
-    "/customers",
-    "/reports"
+  "AllMenus":[
+        "/",
+        "/products",
+        "/barcode-generator",
+        "/sales",
+        "/transactions",
+        "/ledger",
+        "/inventory",
+        "/suppliers",
+        "/customers",
+        "/reports"
   ]
 }

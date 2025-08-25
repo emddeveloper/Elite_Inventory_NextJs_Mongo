@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "username": "admin",
+      "password": "admin123",
+      "role": "admin",
+      "menus": ["/", "/products","/barcode-generator", "/sales", "/transactions", "/ledger", "/inventory", "/suppliers", "/customers","/reports"]
+    },
+    {
+      "username": "manager",
+      "password": "manager123",
+      "role": "manager",
+      "menus": ["/", "/products", "/sales","/barcode-generator", "/transactions", "/ledger","/reports"]
+    },
+    {
+      "username": "staff",
+      "password": "staff123",
+      "role": "staff",
+      "menus": ["/", "/products", "/sales","/barcode-generator","/reports"]
+    }
+  ]
+}

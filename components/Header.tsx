@@ -292,6 +292,14 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
                   >
                     Profile
                   </button>
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={() => { setOpenUserMenu(false); router.push('/admin/users') }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Manage Users
+                    </button>
+                  )}
                   <button
                     onClick={() => { setOpenUserMenu(false); onLogout() }}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"

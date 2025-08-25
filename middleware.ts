@@ -40,8 +40,8 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Enforce menu-based access if provided
-  if (user.menus && user.menus.length > 0) {
+  // Enforce menu-based access if provided (admins bypass)
+  if (user.role !== 'admin' && user.menus && user.menus.length > 0) {
     const allowed = user.menus.some(m => pathname === m || pathname.startsWith(m + '/'))
     if (!allowed) {
       const url = req.nextUrl.clone()
