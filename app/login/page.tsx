@@ -118,6 +118,19 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-gray-500">Demo users: admin/admin123, manager/manager123, staff/staff123</p>
+
+        {/* Footer credits */}
+        <div className="mt-4 text-center text-[11px] text-gray-600">
+          <span>Design and developed by </span>
+          <span className="font-semibold text-gray-800">Elite Enterprise (EMD Developer)</span>
+          <span> • </span>
+          <a
+            href="mailto:emd.developer@gmail.com"
+            className="text-primary-700 hover:text-primary-800 underline underline-offset-2"
+          >
+            emd.developer@gmail.com
+          </a>
+        </div>
       </div>
     </div>
   )
