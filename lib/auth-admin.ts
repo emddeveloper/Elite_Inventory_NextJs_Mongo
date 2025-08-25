@@ -12,51 +12,79 @@ export type UserRecord = {
   menus?: string[]
 }
 
-const AUTH_FILE = path.join(process.cwd(), 'auth.json')
-const BACKUP_DIR = path.join(process.cwd(), 'backups')
+const AUTH_FILE_PRIMARY = path.join(process.cwd(), 'auth.json')
+const RUNTIME_DIR = process.env.AUTH_RUNTIME_DIR || '/tmp'
+const AUTH_FILE_RUNTIME = path.join(RUNTIME_DIR, 'auth.json')
+
+function pickAuthReadPath() {
+  // Prefer runtime copy if it exists (e.g., after first write on serverless)
+  try {
+    if (fs.existsSync(AUTH_FILE_RUNTIME)) return AUTH_FILE_RUNTIME
+  } catch {}
+  return AUTH_FILE_PRIMARY
+}
+
+function ensureDir(dir: string) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+}
 
 export type AuthJson = { users: UserRecord[]; AllMenus?: string[]; [k: string]: any }
 
 export function readAuthFile(): AuthJson {
-  const raw = fs.readFileSync(AUTH_FILE, 'utf-8')
+  const readPath = pickAuthReadPath()
+  const raw = fs.readFileSync(readPath, 'utf-8')
   return JSON.parse(raw)
 }
 
-export function ensureBackupDir() {
-  if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true })
-}
-
 export function writeAuthFileWithBackup(users: UserRecord[]) {
-  ensureBackupDir()
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const backupPath = path.join(BACKUP_DIR, `auth.backup.${timestamp}.json`)
+  // Determine base dir by target. Try primary first; on failure, fall back to runtime dir.
+  const attemptWrite = (targetFile: string) => {
+    const baseDir = path.dirname(targetFile)
+    const backupDir = path.join(baseDir, 'backups')
+    ensureDir(baseDir)
+    ensureDir(backupDir)
 
-  // Backup existing file if present
-  if (fs.existsSync(AUTH_FILE)) {
-    const current = fs.readFileSync(AUTH_FILE)
-    fs.writeFileSync(backupPath, current)
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const backupPath = path.join(backupDir, `auth.backup.${timestamp}.json`)
+
+    // Backup existing file if present
+    if (fs.existsSync(targetFile)) {
+      const current = fs.readFileSync(targetFile)
+      fs.writeFileSync(backupPath, current)
+    }
+
+    // Preserve other fields like AllMenus
+    let currentJson: AuthJson = { users: [] }
+    try {
+      currentJson = JSON.parse(fs.readFileSync(targetFile, 'utf-8'))
+    } catch {}
+    const merged: AuthJson = { ...currentJson, users }
+    const data = JSON.stringify(merged, null, 2)
+
+    // Simple integrity: compute sha256
+    const checksum = crypto.createHash('sha256').update(data).digest('hex')
+    const tmp = targetFile + '.tmp'
+    fs.writeFileSync(tmp, data)
+    // Verify write
+    const written = fs.readFileSync(tmp, 'utf-8')
+    const writtenChecksum = crypto.createHash('sha256').update(written).digest('hex')
+    if (checksum !== writtenChecksum) {
+      fs.unlinkSync(tmp)
+      throw new Error('Integrity check failed while writing auth file')
+    }
+    fs.renameSync(tmp, targetFile)
   }
 
-  // Preserve other fields like AllMenus
-  let currentJson: AuthJson = { users: [] }
   try {
-    currentJson = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf-8'))
-  } catch {}
-  const merged: AuthJson = { ...currentJson, users }
-  const data = JSON.stringify(merged, null, 2)
-
-  // Simple integrity: compute sha256
-  const checksum = crypto.createHash('sha256').update(data).digest('hex')
-  const tmp = AUTH_FILE + '.tmp'
-  fs.writeFileSync(tmp, data)
-  // Verify write
-  const written = fs.readFileSync(tmp, 'utf-8')
-  const writtenChecksum = crypto.createHash('sha256').update(written).digest('hex')
-  if (checksum !== writtenChecksum) {
-    fs.unlinkSync(tmp)
-    throw new Error('Integrity check failed while writing auth file')
+    attemptWrite(AUTH_FILE_PRIMARY)
+  } catch (e: any) {
+    if (e?.code === 'EROFS' || e?.code === 'EPERM' || e?.code === 'EACCES') {
+      ensureDir(RUNTIME_DIR)
+      attemptWrite(AUTH_FILE_RUNTIME)
+    } else {
+      throw e
+    }
   }
-  fs.renameSync(tmp, AUTH_FILE)
 }
 
 // Password hashing utilities (Node built-in scrypt)

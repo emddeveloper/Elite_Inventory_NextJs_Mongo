@@ -15,10 +15,19 @@ export type AuthUser = {
   menus: string[]
 }
 
-const AUTH_FILE = path.join(process.cwd(), 'auth.json')
+const AUTH_FILE_PRIMARY = path.join(process.cwd(), 'auth.json')
+const RUNTIME_DIR = process.env.AUTH_RUNTIME_DIR || '/tmp'
+const AUTH_FILE_RUNTIME = path.join(RUNTIME_DIR, 'auth.json')
+
+function pickAuthReadPath() {
+  try {
+    if (fs.existsSync(AUTH_FILE_RUNTIME)) return AUTH_FILE_RUNTIME
+  } catch {}
+  return AUTH_FILE_PRIMARY
+}
 
 function readAuthFile(): { users: UserRecord[] } {
-  const raw = fs.readFileSync(AUTH_FILE, 'utf-8')
+  const raw = fs.readFileSync(pickAuthReadPath(), 'utf-8')
   return JSON.parse(raw)
 }
 

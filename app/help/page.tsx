@@ -92,6 +92,15 @@ const sections: { key: string; title: string; steps: string[] }[] = [
       'The export is optimized for browsers (uses ArrayBuffer) to ensure downloads work during production builds.'
     ],
   },
+  {
+    key: 'admin-users',
+    title: 'Admin: User Management',
+    steps: [
+      'Admins can create, update roles/menus, and delete users in User Management.',
+      'On serverless hosts, changes are saved to a runtime-writable path (e.g., /tmp). Data may reset on new deployments/restarts.',
+      'For persistent users across deploys, configure an external store or mount a writable volume.'
+    ],
+  },
 ]
 
 export default function HelpPage() {
