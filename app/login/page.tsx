@@ -70,11 +70,19 @@ export default function LoginPage() {
           <h1 className="mt-4 text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 via-fuchsia-600 to-violet-700">
             Elite Inventory Manager
           </h1>
-          {/* Company name (word art style) */}
-          <p className="mt-1 text-3xl md:text-4xl font-extrabold tracking-wide drop-shadow-sm bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500">
-            {company.name}
-          </p>
-          <p className="mt-2 text-sm text-gray-500">Sign in to continue</p>
+          {/* Company branding */}
+          <div className="mt-3 flex flex-col items-center gap-1">
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+              Welcome to
+            </span>
+            <p className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-sm bg-clip-text text-transparent bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600">
+              {company.name}
+            </p>
+            {company.website && (
+              <p className="text-xs text-gray-500">{company.website.replace(/^https?:\/\//, '')}</p>
+            )}
+          </div>
+          <p className="mt-3 text-sm text-gray-600">Sign in to continue</p>
         </div>
 
         <div className="rounded-2xl border border-primary-100 bg-white/80 backdrop-blur shadow-xl p-6">
