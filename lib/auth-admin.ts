@@ -42,15 +42,18 @@ export function writeAuthFileWithBackup(users: UserRecord[]) {
     const baseDir = path.dirname(targetFile)
     const backupDir = path.join(baseDir, 'backups')
     ensureDir(baseDir)
-    ensureDir(backupDir)
+    // Backups are best-effort; don't fail if not creatable
+    try { ensureDir(backupDir) } catch {}
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
     const backupPath = path.join(backupDir, `auth.backup.${timestamp}.json`)
 
     // Backup existing file if present
     if (fs.existsSync(targetFile)) {
-      const current = fs.readFileSync(targetFile)
-      fs.writeFileSync(backupPath, current)
+      try {
+        const current = fs.readFileSync(targetFile)
+        fs.writeFileSync(backupPath, current)
+      } catch {}
     }
 
     // Preserve other fields like AllMenus
@@ -78,12 +81,9 @@ export function writeAuthFileWithBackup(users: UserRecord[]) {
   try {
     attemptWrite(AUTH_FILE_PRIMARY)
   } catch (e: any) {
-    if (e?.code === 'EROFS' || e?.code === 'EPERM' || e?.code === 'EACCES') {
-      ensureDir(RUNTIME_DIR)
-      attemptWrite(AUTH_FILE_RUNTIME)
-    } else {
-      throw e
-    }
+    // Any failure on primary should fall back to runtime-writable location
+    try { ensureDir(RUNTIME_DIR) } catch {}
+    attemptWrite(AUTH_FILE_RUNTIME)
   }
 }
 
