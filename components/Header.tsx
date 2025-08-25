@@ -23,6 +23,8 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
   const [searchLoading, setSearchLoading] = useState(false)
   const [results, setResults] = useState<any[]>([])
   const [openScanner, setOpenScanner] = useState(false)
+  // Desktop clock
+  const [now, setNow] = useState<Date | null>(null)
 
   // Poll low-stock products every 10s
   useEffect(() => {
@@ -68,6 +70,13 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
     t = setTimeout(run, 250)
     return () => { abort = true; clearTimeout(t) }
   }, [search])
+
+  // Tick clock every second (desktop-only display)
+  useEffect(() => {
+    setNow(new Date())
+    const iv = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(iv)
+  }, [])
 
   // Close search dropdown on outside click or Escape
   useEffect(() => {
@@ -235,6 +244,10 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
         </div>
 
         <div className="flex items-center gap-x-4 lg:gap-x-6">
+          {/* Desktop clock */}
+          <div className="hidden lg:flex items-center text-sm font-medium text-gray-700 tabular-nums" aria-label="Current time">
+            {now ? now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}
+          </div>
           <div className="relative">
             <button type="button" onClick={() => setOpenNotifs(!openNotifs)} className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
               <span className="sr-only">View notifications</span>
