@@ -31,6 +31,7 @@ interface Product {
   supplier?: {
     name: string
     email: string
+    _id?: string
   }
 }
 
@@ -274,6 +275,7 @@ export default function ProductsPage() {
                         <th className="table-header">Product</th>
                         <th className="table-header">SKU</th>
                         <th className="table-header">Category</th>
+                        <th className="table-header">Supplier</th>
                         <th className="table-header">Price</th>
                         <th className="table-header">GST %</th>
                         <th className="table-header">Quantity</th>
@@ -306,6 +308,7 @@ export default function ProductsPage() {
                             </td>
                             <td className="table-cell font-mono">{product.sku}</td>
                             <td className="table-cell">{product.category}</td>
+                            <td className="table-cell">{product.supplier?.name || '-'}</td>
                             <td className="table-cell">₹{product.price.toFixed(2)}</td>
                             <td className="table-cell">{product.gstPercent ?? 5}%</td>
                             <td className="table-cell">{product.quantity}</td>
@@ -446,7 +449,9 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
     minQuantity: '',
     gstPercent: '5',
     location: '',
+    supplier: '' as string,
   })
+  const [suppliers, setSuppliers] = useState<Array<{ _id: string; name: string }>>([])
   const [scanSkuOpen, setScanSkuOpen] = useState(false)
   const [showBarcode, setShowBarcode] = useState(false)
 
@@ -460,9 +465,10 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
         price: product.price.toString(),
         cost: product.cost.toString(),
         quantity: product.quantity.toString(),
-          minQuantity: product.minQuantity.toString(),
-          gstPercent: (product.gstPercent ?? 5).toString(),
+        minQuantity: product.minQuantity.toString(),
+        gstPercent: (product.gstPercent ?? 5).toString(),
         location: product.location,
+        supplier: product.supplier?._id || '',
       })
     } else {
       setFormData({
@@ -473,12 +479,27 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
         price: '',
         cost: '',
         quantity: '',
-          minQuantity: '',
-          gstPercent: '5',
+        minQuantity: '',
+        gstPercent: '5',
         location: '',
+        supplier: '',
       })
     }
   }, [product])
+
+  useEffect(() => {
+    // Load suppliers when modal opens
+    if (!isOpen) return
+    ;(async () => {
+      try {
+        const res = await fetch('/api/suppliers?activeOnly=true&limit=1000')
+        const data = await res.json()
+        if (res.ok) {
+          setSuppliers((data.suppliers || []).map((s: any) => ({ _id: s._id, name: s.name })))
+        }
+      } catch {}
+    })()
+  }, [isOpen])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -488,6 +509,7 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
       cost: parseFloat(formData.cost),
       quantity: parseInt(formData.quantity),
       minQuantity: parseInt(formData.minQuantity),
+      supplier: formData.supplier || undefined,
     }
     
     if (product) {
@@ -576,6 +598,20 @@ function ProductModal({ isOpen, onClose, onSubmit, product, categories }: {
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Supplier</label>
+                <select
+                  value={formData.supplier}
+                  onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="">No Supplier</option>
+                  {suppliers.map((s) => (
+                    <option key={s._id} value={s._id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">GST %</label>

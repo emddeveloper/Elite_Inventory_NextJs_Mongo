@@ -58,6 +58,16 @@ const sections: { key: string; title: string; steps: string[] }[] = [
     ],
   },
   {
+    key: 'suppliers',
+    title: 'Suppliers',
+    steps: [
+      'Manage your supplier directory including contact and billing details.',
+      'Search suppliers by name, email, phone, or city. Pagination keeps lists responsive.',
+      'Add or edit suppliers with address and contact person details. You can also deactivate a supplier.',
+      'When adding or editing products, you can optionally assign a supplier (shown in the Products list).'
+    ],
+  },
+  {
     key: 'transactions',
     title: 'Transactions',
     steps: [
