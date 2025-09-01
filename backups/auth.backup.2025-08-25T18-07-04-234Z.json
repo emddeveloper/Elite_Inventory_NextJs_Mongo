@@ -56,17 +56,6 @@
         "/barcode-generator",
         "/sales"
       ]
-    },
-    {
-      "username": "aa",
-      "password": "scrypt:4a10cf65800043038f398ad644b44cd7:7e546aa69e20ac372d7b60ffda4235b66eefe15fcf349a3c258340a0dbc2b4e3e1f12db3bb8337b2172749151924d5054e521c7a495305cae86f2a5d926c3ceb",
-      "role": "viewer",
-      "menus": [
-        "/inventory",
-        "/transactions",
-        "/ledger",
-        "/sales"
-      ]
     }
   ],
   "AllMenus": [

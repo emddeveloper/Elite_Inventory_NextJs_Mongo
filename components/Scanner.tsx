@@ -18,20 +18,42 @@ export default function Scanner({ onDetected, onClose, constraints, className, b
   const [active, setActive] = useState(false)
   const handledRef = useRef(false)
 
-  function playBeep() {
+  function vibrateSuccess() {
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-      const o = ctx.createOscillator()
-      const g = ctx.createGain()
-      o.type = 'sine'
-      o.frequency.setValueAtTime(880, ctx.currentTime) // A5
-      g.gain.setValueAtTime(0.001, ctx.currentTime)
-      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01)
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15)
-      o.connect(g)
-      g.connect(ctx.destination)
-      o.start()
-      o.stop(ctx.currentTime + 0.16)
+      if ('vibrate' in navigator) {
+        // Short success haptic pattern
+        navigator.vibrate([30, 40, 30])
+      }
+    } catch {}
+  }
+
+  function playSuccessTune() {
+    try {
+      const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext
+      const ctx = new AudioCtx()
+      // Simple 3-note ascending melody
+      const notes = [
+        { f: 784, d: 0.12 },   // G5
+        { f: 988, d: 0.12 },   // B5
+        { f: 1175, d: 0.16 },  // D6
+      ]
+      let t = ctx.currentTime
+      for (const n of notes) {
+        const o = ctx.createOscillator()
+        const g = ctx.createGain()
+        o.type = 'sine'
+        o.frequency.setValueAtTime(n.f, t)
+        g.gain.setValueAtTime(0.0001, t)
+        g.gain.exponentialRampToValueAtTime(0.2, t + 0.02)
+        g.gain.exponentialRampToValueAtTime(0.0001, t + n.d)
+        o.connect(g)
+        g.connect(ctx.destination)
+        o.start(t)
+        o.stop(t + n.d + 0.02)
+        t += n.d + 0.02
+      }
+      // Attempt to release the context shortly after
+      setTimeout(() => { try { ctx.close() } catch {} }, 600)
     } catch {}
   }
 
@@ -57,7 +79,9 @@ export default function Scanner({ onDetected, onClose, constraints, className, b
                 if (handledRef.current) return
                 handledRef.current = true
                 try { console.debug('[Scanner] Detected code:', code) } catch {}
-                if (beep) playBeep()
+                // Haptics always on success; sound controlled by `beep` prop
+                vibrateSuccess()
+                if (beep) playSuccessTune()
                 stopped = true
                 try { codeReader.reset() } catch {}
                 setActive(false)
