@@ -409,9 +409,9 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({
                 <Text style={styles.col2}>{item.name}</Text>
                 <Text style={styles.col3}>{item.hsn || ''}</Text>
                 <Text style={styles.col4}>{item.quantity} {item.unit || ''}</Text>
-                <Text style={styles.col5}>{item.unitPrice.toFixed(2)}</Text>
+                <Text style={styles.col5}>₹{item.unitPrice.toFixed(2)}</Text>
                 <Text style={styles.col6}>{item.gstPercent || 0}%</Text>
-                <Text style={styles.col7}>{item.lineTotal.toFixed(2)}</Text>
+                <Text style={styles.col7}>₹{item.lineTotal.toFixed(2)}</Text>
               </View>
             ))}
           </View>
@@ -421,19 +421,19 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({
             <View style={styles.totalsTable}>
               <View style={styles.totalRow}>
                 <Text>Subtotal:</Text>
-                <Text>{subtotal.toFixed(2)}</Text>
+                <Text>₹{subtotal.toFixed(2)}</Text>
               </View>
               <View style={styles.totalRow}>
                 <Text>Tax:</Text>
-                <Text>{tax.toFixed(2)}</Text>
+                <Text>₹{tax.toFixed(2)}</Text>
               </View>
               <View style={styles.totalRow}>
                 <Text>Discount:</Text>
-                <Text>- {discount.toFixed(2)}</Text>
+                <Text>- ₹{discount.toFixed(2)}</Text>
               </View>
               <View style={styles.totalRowBold}>
                 <Text>TOTAL</Text>
-                <Text>{total.toFixed(2)}</Text>
+                <Text>₹{total.toFixed(2)}</Text>
               </View>
             </View>
           </View>
@@ -452,22 +452,22 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({
             {taxSummaryArray.map((taxItem, index) => (
               <View key={index} style={styles.taxTableRow}>
                 <Text style={styles.taxCol1}>{taxItem.hsn}</Text>
-                <Text style={styles.taxCol2}>{taxItem.taxable.toFixed(2)}</Text>
+                <Text style={styles.taxCol2}>₹{taxItem.taxable.toFixed(2)}</Text>
                 <Text style={styles.taxCol3}>{(taxItem.rate / 2).toFixed(2)}%</Text>
-                <Text style={styles.taxCol4}>{taxItem.cgst.toFixed(2)}</Text>
+                <Text style={styles.taxCol4}>₹{taxItem.cgst.toFixed(2)}</Text>
                 <Text style={styles.taxCol5}>{(taxItem.rate / 2).toFixed(2)}%</Text>
-                <Text style={styles.taxCol6}>{taxItem.sgst.toFixed(2)}</Text>
-                <Text style={styles.taxCol7}>{taxItem.totalTax.toFixed(2)}</Text>
+                <Text style={styles.taxCol6}>₹{taxItem.sgst.toFixed(2)}</Text>
+                <Text style={styles.taxCol7}>₹{taxItem.totalTax.toFixed(2)}</Text>
               </View>
             ))}
             <View style={[styles.taxTableRow, { fontWeight: 'bold' }]}>
               <Text style={styles.taxCol1}>Total</Text>
-              <Text style={styles.taxCol2}>{totalTaxable.toFixed(2)}</Text>
+              <Text style={styles.taxCol2}>₹{totalTaxable.toFixed(2)}</Text>
               <Text style={styles.taxCol3}></Text>
-              <Text style={styles.taxCol4}>{totalCgst.toFixed(2)}</Text>
+              <Text style={styles.taxCol4}>₹{totalCgst.toFixed(2)}</Text>
               <Text style={styles.taxCol5}></Text>
-              <Text style={styles.taxCol6}>{totalSgst.toFixed(2)}</Text>
-              <Text style={styles.taxCol7}>{totalGst.toFixed(2)}</Text>
+              <Text style={styles.taxCol6}>₹{totalSgst.toFixed(2)}</Text>
+              <Text style={styles.taxCol7}>₹{totalGst.toFixed(2)}</Text>
             </View>
           </View>
 

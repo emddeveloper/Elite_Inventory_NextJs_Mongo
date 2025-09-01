@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { 
   CubeIcon, 
-  CurrencyDollarIcon, 
+  CurrencyRupeeIcon, 
   ExclamationTriangleIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -160,16 +160,25 @@ export default function Dashboard() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   {item.name === 'Total Products' && <CubeIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
-                  {item.name === 'Total Value' && <CurrencyDollarIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
+                  {item.name === 'Total Value' && <CurrencyRupeeIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
                   {item.name === 'Low Stock Items' && <ExclamationTriangleIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
                   {item.name === 'Monthly Sales' && <ArrowTrendingUpIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
-                  {item.name === 'Daily Sales' && <CurrencyDollarIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
+                  {item.name === 'Daily Sales' && <CurrencyRupeeIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">{item.name}</dt>
                     <dd>
-                      <div className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 via-fuchsia-600 to-violet-600">{item.stat}</div>
+                      <div className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 via-fuchsia-600 to-violet-600">
+                        {(() => {
+                          const s = String(item.stat).trim()
+                          const money = item.name === 'Total Value' || item.name === 'Monthly Sales' || item.name === 'Daily Sales'
+                          if (!money) return item.stat
+                          if (s.startsWith('₹')) return s
+                          if (s.startsWith('$')) return s.replace(/^\$\s?/, '₹')
+                          return `₹${s}`
+                        })()}
+                      </div>
                     </dd>
                   </dl>
                 </div>
@@ -226,7 +235,7 @@ export default function Dashboard() {
                             {activity.type === 'add' ? '+' :
                              activity.type === 'update' ? '↻' :
                              activity.type === 'alert' ? '!' :
-                             activity.type === 'sale' ? '$' :
+                             activity.type === 'sale' ? '₹' :
                              '→'}
                           </span>
                         </span>

@@ -146,11 +146,11 @@ export default function ReportsPage() {
                     <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <div className="text-gray-500">Revenue</div>
-                        <div className="font-medium">${profitSummary.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                        <div className="font-medium">₹{profitSummary.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
                       </div>
                       <div>
                         <div className="text-gray-500">COGS</div>
-                        <div className="font-medium">${profitSummary.cogs.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                        <div className="font-medium">₹{profitSummary.cogs.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
                       </div>
                     </div>
                   </div>
@@ -168,7 +168,7 @@ export default function ReportsPage() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="label" />
                       <YAxis />
-                      <Tooltip formatter={(v: any) => `$${Number(v).toLocaleString()}`} />
+                      <Tooltip formatter={(v: any) => `₹${Number(v).toLocaleString()}`} />
                       <Line type="monotone" dataKey="total" stroke="#3B82F6" name="Sales" strokeWidth={2} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -186,7 +186,7 @@ export default function ReportsPage() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="label" />
                       <YAxis />
-                      <Tooltip formatter={(v: any, n: any) => n==='profit'?`$${Number(v).toLocaleString()}`:`$${Number(v).toLocaleString()}`} />
+                      <Tooltip formatter={(v: any, n: any) => `₹${Number(v).toLocaleString()}`} />
                       <Legend />
                       <Line type="monotone" dataKey="revenue" stroke="#3B82F6" name="Revenue" strokeWidth={2} />
                       <Line type="monotone" dataKey="cogs" stroke="#EF4444" name="COGS" strokeWidth={2} />
@@ -212,8 +212,8 @@ export default function ReportsPage() {
                       {perProductMargins.map((p) => (
                         <tr key={p.sku} className="hover:bg-gray-50">
                           <td className="px-3 py-2">{p.name}</td>
-                          <td className="px-3 py-2 text-right">${p.price?.toLocaleString?.() ?? p.price}</td>
-                          <td className="px-3 py-2 text-right">${p.cost?.toLocaleString?.() ?? p.cost}</td>
+                          <td className="px-3 py-2 text-right">₹{p.price?.toLocaleString?.() ?? p.price}</td>
+                          <td className="px-3 py-2 text-right">₹{p.cost?.toLocaleString?.() ?? p.cost}</td>
                           <td className="px-3 py-2 text-right">{p.quantity}</td>
                           <td className="px-3 py-2 text-right">{Number(p.profitMarginPercent || 0).toFixed(1)}%</td>
                         </tr>
@@ -243,7 +243,7 @@ export default function ReportsPage() {
                           <tr key={b.sku} className="hover:bg-gray-50">
                             <td className="px-3 py-2">{b.name}</td>
                             <td className="px-3 py-2 text-right">{b.unitsSold.toLocaleString()}</td>
-                            <td className="px-3 py-2 text-right">${b.revenue.toLocaleString()}</td>
+                            <td className="px-3 py-2 text-right">₹{b.revenue.toLocaleString()}</td>
                           </tr>
                         ))}
                       </tbody>

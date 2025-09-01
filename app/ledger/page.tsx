@@ -300,8 +300,8 @@ export default function InventoryLedgerPage() {
                         }`}>{it.type}</span>
                       </td>
                       <td className="table-cell">{it.quantity}</td>
-                      <td className="table-cell">{it.unitCost != null ? `$${it.unitCost.toFixed(2)}` : '-'}</td>
-                      <td className="table-cell">{it.unitPrice != null ? `$${it.unitPrice.toFixed(2)}` : '-'}</td>
+                      <td className="table-cell">{it.unitCost != null ? `₹${it.unitCost.toFixed(2)}` : '-'}</td>
+                      <td className="table-cell">{it.unitPrice != null ? `₹${it.unitPrice.toFixed(2)}` : '-'}</td>
                       <td className="table-cell">{it.balanceAfter ?? '-'}</td>
                       <td className="table-cell">{it.source ?? '-'}</td>
                       <td className="table-cell">{it.reference ?? '-'}</td>

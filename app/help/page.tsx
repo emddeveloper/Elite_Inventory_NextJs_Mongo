@@ -157,6 +157,7 @@ export default function HelpPage() {
             <li><span className="font-semibold">Scan barcodes:</span> Click the QR icon near the search input to open the scanner.</li>
             <li><span className="font-semibold">Scan feedback:</span> On success, your device vibrates and a short success tune plays (sound can be disabled).</li>
             <li><span className="font-semibold">Global feedback toggles:</span> Open the user menu (top-right) and use <em>Feedback Settings</em> to enable/disable Sound and Vibration globally.</li>
+            <li><span className="font-semibold">Currency display:</span> All monetary amounts in the UI and generated invoices are shown in Indian Rupees (₹).</li>
             <li><span className="font-semibold">Paginate results:</span> Use the bottom controls to change page and items per page for large product lists.</li>
             <li><span className="font-semibold">Low stock alerts:</span> Open the bell icon to see items that need restocking.</li>
           </ul>

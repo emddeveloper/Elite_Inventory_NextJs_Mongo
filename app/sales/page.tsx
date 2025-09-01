@@ -272,7 +272,7 @@ export default function SalesPage() {
 														<div className="text-xs text-gray-500">{p.sku}</div>
 													</div>
 													<div className="flex items-center space-x-3">
-														<div className="text-sm text-gray-700">{`$${p.price.toFixed(2)}`}</div>
+														<div className="text-sm text-gray-700">{`₹${p.price.toFixed(2)}`}</div>
 														<button onClick={() => addItem(p)} className="btn-primary flex items-center"><PlusIcon className="h-4 w-4 mr-1" /> Add</button>
 													</div>
 												</div>
@@ -308,8 +308,8 @@ export default function SalesPage() {
 														<td className="table-cell">
 															<input type="number" min={1} value={it.quantity} onChange={(e) => updateQty(it.productId, parseInt(e.target.value || '1'))} className="input-field w-24" />
 														</td>
-														<td className="table-cell">{`$${it.unitPrice.toFixed(2)}`}</td>
-														<td className="table-cell">{`$${it.lineTotal.toFixed(2)}`}</td>
+														<td className="table-cell">{`₹${it.unitPrice.toFixed(2)}`}</td>
+														<td className="table-cell">{`₹${it.lineTotal.toFixed(2)}`}</td>
 														<td className="table-cell">
 															<button onClick={() => removeItem(it.productId)} className="text-red-600 hover:text-red-800 inline-flex items-center"><TrashIcon className="h-4 w-4 mr-1" /> Remove</button>
 														</td>
@@ -336,15 +336,15 @@ export default function SalesPage() {
 													) : (
 														<>
 															<input type="number" min={0} max={subtotal} value={discountAmount} onChange={(e) => setDiscountAmount(Number(e.target.value || '0'))} className="input-field w-36" />
-															<span className="text-sm text-gray-500">{`$`}</span>
+															<span className="text-sm text-gray-500">{`₹`}</span>
 														</>
 													)}
 												</div>
 											</div>
-											<div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">{`$${subtotal.toFixed(2)}`}</span></div>
-											<div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">{`$${tax.toFixed(2)}`}</span></div>
-											<div className="flex justify-between"><span className="text-gray-600">Discount</span><span className="font-medium">-{`$${discount.toFixed(2)}`}</span></div>
-											<div className="flex justify-between text-base"><span>Total</span><span className="font-semibold">{`$${total.toFixed(2)}`}</span></div>
+											<div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">{`₹${subtotal.toFixed(2)}`}</span></div>
+											<div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">{`₹${tax.toFixed(2)}`}</span></div>
+											<div className="flex justify-between"><span className="text-gray-600">Discount</span><span className="font-medium">-{`₹${discount.toFixed(2)}`}</span></div>
+											<div className="flex justify-between text-base"><span>Total</span><span className="font-semibold">{`₹${total.toFixed(2)}`}</span></div>
 											<div className="pt-2 flex justify-end">
 												<button disabled={submitting} onClick={submit} className="btn-primary">{submitting ? 'Submitting...' : 'Submit & Generate Invoice'}</button>
 											</div>

@@ -306,7 +306,7 @@ export default function ProductsPage() {
                             </td>
                             <td className="table-cell font-mono">{product.sku}</td>
                             <td className="table-cell">{product.category}</td>
-                            <td className="table-cell">${product.price.toFixed(2)}</td>
+                            <td className="table-cell">₹{product.price.toFixed(2)}</td>
                             <td className="table-cell">{product.gstPercent ?? 5}%</td>
                             <td className="table-cell">{product.quantity}</td>
                             <td className="table-cell">
@@ -314,7 +314,7 @@ export default function ProductsPage() {
                                 {product.stockStatus}
                               </span>
                             </td>
-                            <td className="table-cell">${product.totalValue.toFixed(2)}</td>
+                            <td className="table-cell">₹{product.totalValue.toFixed(2)}</td>
                             <td className="table-cell">
                               <div className="flex space-x-2">
                                 <Link

@@ -28,8 +28,8 @@ export default function DashboardCharts({ chartData, pieData }: { chartData: Cha
                 <YAxis />
                 <Tooltip 
                   formatter={(value: any, name: any) => [
-                    name === 'sales' ? `$${Number(value).toLocaleString()}` : Number(value).toLocaleString(),
-                    name === 'sales' ? 'Sales ($)' : 'Inventory (units)'
+                    name === 'sales' ? `₹${Number(value).toLocaleString()}` : Number(value).toLocaleString(),
+                    name === 'sales' ? 'Sales (₹)' : 'Inventory (units)'
                   ]}
                 />
                 <Bar dataKey="sales" fill="#3B82F6" name="sales" />
