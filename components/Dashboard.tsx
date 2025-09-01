@@ -9,9 +9,11 @@ import {
   ArrowTrendingDownIcon,
   WifiIcon
 } from '@heroicons/react/24/outline'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { DashboardData } from '@/types/dashboard'
 import { fetchDashboardData } from '@/lib/dashboard-utils'
+import dynamic from 'next/dynamic'
+
+const DashboardCharts = dynamic(() => import('@/components/DashboardCharts'), { ssr: false })
 
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
@@ -29,21 +31,21 @@ export default function Dashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true)
-      console.log('🔄 Dashboard: Starting data load...')
+      if (process.env.NODE_ENV !== 'production') console.log('🔄 Dashboard: Starting data load...')
       const result = await fetchDashboardData()
       
-      console.log('📊 Dashboard: Fetch result:', { success: result.success })
+      if (process.env.NODE_ENV !== 'production') console.log('📊 Dashboard: Fetch result:', { success: result.success })
       
       if (result.success && result.data) {
         setData(result.data)
         setError(null)
-        console.log('✅ Dashboard: Data loaded successfully')
+        if (process.env.NODE_ENV !== 'production') console.log('✅ Dashboard: Data loaded successfully')
       } else {
         setError(result.error || 'Failed to load dashboard data')
-        console.error('❌ Dashboard: Failed to load data:', result.error)
+        if (process.env.NODE_ENV !== 'production') console.error('❌ Dashboard: Failed to load data:', result.error)
       }
     } catch (err) {
-      console.error('❌ Dashboard: Unexpected error during data load:', err)
+      if (process.env.NODE_ENV !== 'production') console.error('❌ Dashboard: Unexpected error during data load:', err)
       setError('An unexpected error occurred while loading dashboard data')
     } finally {
       setLoading(false)
@@ -51,7 +53,7 @@ export default function Dashboard() {
   }
 
   const refreshData = async () => {
-    console.log('🔄 Dashboard: Manual refresh triggered')
+    if (process.env.NODE_ENV !== 'production') console.log('🔄 Dashboard: Manual refresh triggered')
     await loadDashboardData()
   }
 
@@ -190,77 +192,8 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Sales & Inventory Chart */}
-        <div className="overflow-hidden rounded-xl border border-primary-100 bg-white/80 backdrop-blur shadow-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">Sales & Inventory Overview</h2>
-              <div className="flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                <WifiIcon className="h-4 w-4" />
-                <span>Live Data</span>
-              </div>
-            </div>
-            <div className="mt-6 h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value, name) => [
-                      name === 'sales' ? `$${value.toLocaleString()}` : value.toLocaleString(),
-                      name === 'sales' ? 'Sales ($)' : 'Inventory (units)'
-                    ]}
-                  />
-                  <Bar dataKey="sales" fill="#3B82F6" name="sales" />
-                  <Bar dataKey="inventory" fill="#10B981" name="inventory" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* Category Distribution */}
-        <div className="overflow-hidden rounded-xl border border-primary-100 bg-white/80 backdrop-blur shadow-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">Product Categories</h2>
-              <div className="flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                <WifiIcon className="h-4 w-4" />
-                <span>Live Data</span>
-              </div>
-            </div>
-            <div className="mt-6 h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value, name) => [
-                      `${value} products`,
-                      'Count'
-                    ]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Charts (code-split) */}
+      <DashboardCharts chartData={data.chartData as any} pieData={pieData as any} />
 
       {/* Recent Activity */}
       <div className="bg-white/80 backdrop-blur shadow-lg overflow-hidden sm:rounded-xl border border-primary-100">

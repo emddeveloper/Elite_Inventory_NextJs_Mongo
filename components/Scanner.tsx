@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader, Result } from '@zxing/browser'
-import { triggerSuccessVibration, triggerSuccessSound } from '@/lib/feedback'
+import { triggerSuccessVibration, triggerSuccessFeedback } from '@/lib/feedback'
 import { getFeedbackSettings } from '@/lib/user-settings'
 
 interface ScannerProps {
@@ -44,11 +44,15 @@ export default function Scanner({ onDetected, onClose, constraints, className, b
                 if (handledRef.current) return
                 handledRef.current = true
                 try { console.debug('[Scanner] Detected code:', code) } catch {}
-                // Trigger global feedback: always vibrate (if enabled),
-                // play sound only if globally enabled AND local `beep` is true
+                // Trigger global feedback
                 const s = getFeedbackSettings()
-                if (s.vibrationEnabled) { try { triggerSuccessVibration() } catch {} }
-                if (s.soundEnabled && !!beep) { try { triggerSuccessSound() } catch {} }
+                // If sound is allowed (global + prop), play combined feedback (sound + vibration if enabled)
+                if (s.soundEnabled && !!beep) {
+                  try { triggerSuccessFeedback() } catch {}
+                } else if (s.vibrationEnabled) {
+                  // Otherwise, vibrate-only if enabled
+                  try { triggerSuccessVibration() } catch {}
+                }
                 stopped = true
                 try { codeReader.reset() } catch {}
                 setActive(false)

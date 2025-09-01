@@ -39,6 +39,10 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [debouncedTerm, setDebouncedTerm] = useState('')
+  const [aborter, setAborter] = useState<AbortController | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -47,18 +51,36 @@ export default function ProductsPage() {
 
   const categories = ['Electronics', 'Clothing', 'Books', 'Home & Garden', 'Sports', 'Other']
 
+  // Debounce search input
   useEffect(() => {
-    fetchProducts()
-  }, [searchTerm, selectedCategory])
+    const t = setTimeout(() => {
+      setDebouncedTerm(searchTerm.trim())
+      setPage(1) // reset to first page on new search
+    }, 350)
+    return () => clearTimeout(t)
+  }, [searchTerm])
 
-  const fetchProducts = async () => {
+  // Fetch products when debounced term or category changes, with cancellation
+  useEffect(() => {
+    const controller = new AbortController()
+    setAborter((prev) => {
+      try { prev?.abort() } catch {}
+      return controller
+    })
+    fetchProducts(debouncedTerm, selectedCategory, controller.signal)
+    return () => {
+      try { controller.abort() } catch {}
+    }
+  }, [debouncedTerm, selectedCategory])
+
+  const fetchProducts = async (term?: string, category?: string, signal?: AbortSignal) => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
-      if (searchTerm) params.append('search', searchTerm)
-      if (selectedCategory) params.append('category', selectedCategory)
+      if (term) params.append('search', term)
+      if (category) params.append('category', category)
       
-      const response = await fetch(`/api/products?${params}`)
+      const response = await fetch(`/api/products?${params}`, { signal })
       const data = await response.json()
       
       if (response.ok) {
@@ -66,8 +88,10 @@ export default function ProductsPage() {
       } else {
         toast.error('Failed to fetch products')
       }
-    } catch (error) {
-      toast.error('Error fetching products')
+    } catch (error: any) {
+      if (error?.name !== 'AbortError') {
+        toast.error('Error fetching products')
+      }
     } finally {
       setLoading(false)
     }
@@ -80,13 +104,17 @@ export default function ProductsPage() {
       const params = new URLSearchParams()
       if (term) params.append('search', term)
       if (category) params.append('category', category)
-      const response = await fetch(`/api/products?${params}`)
+      const controller = new AbortController()
+      setAborter((prev) => { try { prev?.abort() } catch {}; return controller })
+      const response = await fetch(`/api/products?${params}`, { signal: controller.signal })
       const data = await response.json()
       if (response.ok) {
         setProducts(data.products)
       }
-    } catch (e) {
-      // no-op; searchTerm state will still trigger fetchProducts via useEffect
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') {
+        // no-op; searchTerm state will still trigger fetchProducts via useEffect
+      }
     } finally {
       setLoading(false)
     }
@@ -169,6 +197,11 @@ export default function ProductsPage() {
         return 'bg-gray-100 text-gray-800'
     }
   }
+
+  // Client-side pagination slice
+  const totalItems = products.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+  const pagedProducts = products.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -263,7 +296,7 @@ export default function ProductsPage() {
                           </td>
                         </tr>
                       ) : (
-                        products.map((product) => (
+                        pagedProducts.map((product) => (
                           <tr key={product._id} className="hover:bg-gray-50">
                             <td className="table-cell">
                               <div>
@@ -317,6 +350,23 @@ export default function ProductsPage() {
                       )}
                     </tbody>
                   </table>
+                </div>
+                {/* Pagination controls */}
+                <div className="flex items-center justify-between p-3">
+                  <div className="text-sm text-gray-600">Page {page} of {totalPages} • {totalItems} items</div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      className="input-field w-28"
+                      value={pageSize}
+                      onChange={(e) => { setPage(1); setPageSize(parseInt(e.target.value, 10)) }}
+                    >
+                      {[10, 20, 50, 100].map(sz => (
+                        <option key={sz} value={sz}>{sz} / page</option>
+                      ))}
+                    </select>
+                    <button className="btn-secondary" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</button>
+                    <button className="btn-secondary" disabled={page === totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Next</button>
+                  </div>
                 </div>
               </div>
 

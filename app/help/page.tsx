@@ -18,11 +18,12 @@ const sections: { key: string; title: string; steps: string[] }[] = [
     key: 'products',
     title: 'Products',
     steps: [
-      'Browse the product list, search, and filter as needed.',
+      'Browse the product list, search, and filter as needed (search is debounced to reduce network calls).',
       'Add a product with name, SKU, price, and quantity.',
       'Edit a product to update stock levels or pricing.',
       'Scan barcodes using the scanner button in the top search area.',
-      'On a successful scan, your device vibrates and a short success tune plays (sound can be disabled).'
+      'On a successful scan, your device vibrates and a short success tune plays (sound can be disabled).',
+      'Use the pagination controls at the bottom to navigate pages and change items per page.'
     ],
   },
   {
@@ -152,9 +153,11 @@ export default function HelpPage() {
           <div className="font-medium text-primary-900 mb-1">Quick Tips</div>
           <ul className="list-disc pl-5 text-sm text-primary-900/90 space-y-1">
             <li><span className="font-semibold">Search fast:</span> Use the top search bar to find products by name or SKU.</li>
+            <li><span className="font-semibold">Debounced search:</span> Typing waits briefly (~350ms) before searching to keep things responsive.</li>
             <li><span className="font-semibold">Scan barcodes:</span> Click the QR icon near the search input to open the scanner.</li>
             <li><span className="font-semibold">Scan feedback:</span> On success, your device vibrates and a short success tune plays (sound can be disabled).</li>
             <li><span className="font-semibold">Global feedback toggles:</span> Open the user menu (top-right) and use <em>Feedback Settings</em> to enable/disable Sound and Vibration globally.</li>
+            <li><span className="font-semibold">Paginate results:</span> Use the bottom controls to change page and items per page for large product lists.</li>
             <li><span className="font-semibold">Low stock alerts:</span> Open the bell icon to see items that need restocking.</li>
           </ul>
         </div>
