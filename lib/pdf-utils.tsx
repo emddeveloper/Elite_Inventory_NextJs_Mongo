@@ -52,6 +52,7 @@ interface GeneratePDFOptions {
   discount: number
   total: number
   company: Company
+  generatedBy?: string
   shipTo?: {
     name: string
     address: string

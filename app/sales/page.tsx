@@ -36,9 +36,20 @@ export default function SalesPage() {
 	const [viewerOpen, setViewerOpen] = useState(false)
 	const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
 	const [pdfFilename, setPdfFilename] = useState<string>('invoice.pdf')
+	const [currentUser, setCurrentUser] = useState<{ username: string; role: string } | null>(null)
 
 	useEffect(() => {
 		loadProducts('')
+	}, [])
+
+	// Fetch current user once for PDF metadata
+	useEffect(() => {
+		let mounted = true
+		fetch('/api/auth/me')
+			.then(r => r.json())
+			.then(({ user }) => { if (mounted) setCurrentUser(user ? { username: user.username, role: user.role } : null) })
+			.catch(() => {})
+		return () => { mounted = false }
 	}, [])
 
 	// Sync content padding with sidebar collapsed state
@@ -147,7 +158,8 @@ export default function SalesPage() {
 						tax,
 						discount,
 						total,
-						company
+						company,
+						generatedBy: currentUser?.username
 					})
 					setPdfBlob(pdfBlob)
 					const clientNamePart = (client.name || 'CLIENT').trim().replace(/\s+/g, '_').toUpperCase()

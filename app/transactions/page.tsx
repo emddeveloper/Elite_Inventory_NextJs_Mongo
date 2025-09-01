@@ -25,8 +25,19 @@ export default function TransactionsPage() {
 	const [total, setTotal] = useState<number>(0)
 	const [query, setQuery] = useState<string>('')
 	const [debouncedQuery, setDebouncedQuery] = useState<string>('')
+	const [currentUser, setCurrentUser] = useState<{ username: string; role: string } | null>(null)
 
 	useEffect(() => { load() }, [page, limit, debouncedQuery])
+
+	// Get current user once for invoice metadata
+	useEffect(() => {
+		let mounted = true
+		fetch('/api/auth/me')
+			.then(r => r.json())
+			.then(({ user }) => { if (mounted) setCurrentUser(user ? { username: user.username, role: user.role } : null) })
+			.catch(() => {})
+		return () => { mounted = false }
+	}, [])
 
 	// Sync content padding with sidebar collapsed state
 	useEffect(() => {
@@ -122,7 +133,8 @@ export default function TransactionsPage() {
 				discount: transaction.discount || 0,
 				total: transaction.total || 0,
 				company,
-				shipTo: transaction.shipTo
+				shipTo: transaction.shipTo,
+				generatedBy: currentUser?.username
 			})
 			
 			downloadPDF(pdfBlob, `${name}.pdf`)
