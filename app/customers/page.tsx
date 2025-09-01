@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Dialog } from '@headlessui/react'
-import { PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, UserIcon, DocumentTextIcon, CreditCardIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, UserIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
 
-interface SupplierAddress {
+interface CustomerAddress {
   street: string
   city: string
   state: string
@@ -15,29 +15,29 @@ interface SupplierAddress {
   country?: string
 }
 
-interface SupplierContact {
+interface CustomerContact {
   name: string
   email: string
   phone: string
 }
 
-interface Supplier {
+interface Customer {
   _id: string
   name: string
   email: string
   phone: string
-  address: SupplierAddress
-  contactPerson: SupplierContact
-  paymentTerms?: string
+  address: CustomerAddress
+  contactPerson: CustomerContact
   isActive: boolean
   notes?: string
   createdAt?: string
 }
 
-export default function SuppliersPage() {
+export default function CustomersPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+
+  const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [search, setSearch] = useState('')
   const [debounced, setDebounced] = useState('')
@@ -47,12 +47,12 @@ export default function SuppliersPage() {
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize])
 
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editing, setEditing] = useState<Supplier | null>(null)
+  const [editing, setEditing] = useState<Customer | null>(null)
   const [sortBy, setSortBy] = useState<'name' | 'city' | 'isActive'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active')
   const [quickViewOpen, setQuickViewOpen] = useState(false)
-  const [selected, setSelected] = useState<Supplier | null>(null)
+  const [selected, setSelected] = useState<Customer | null>(null)
 
   // Sync content padding with sidebar collapsed state
   useEffect(() => {
@@ -71,11 +71,11 @@ export default function SuppliersPage() {
   }, [search])
 
   useEffect(() => {
-    fetchSuppliers(page, pageSize, debounced)
+    fetchCustomers(page, pageSize, debounced)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, debounced, sortBy, sortOrder, statusFilter])
 
-  async function fetchSuppliers(p: number, limit: number, q: string) {
+  async function fetchCustomers(p: number, limit: number, q: string) {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -85,50 +85,50 @@ export default function SuppliersPage() {
       params.set('sortBy', sortBy === 'city' ? 'address.city' : sortBy)
       params.set('sortOrder', sortOrder)
       params.set('status', statusFilter)
-      const res = await fetch(`/api/suppliers?${params.toString()}`)
+      const res = await fetch(`/api/customers?${params.toString()}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed')
-      setSuppliers(data.suppliers)
-      setTotal(data.pagination?.total || data.suppliers?.length || 0)
+      setCustomers(data.customers)
+      setTotal(data.pagination?.total || data.customers?.length || 0)
     } catch (e: any) {
       console.error(e)
-      toast.error('Failed to load suppliers')
+      toast.error('Failed to load customers')
     } finally {
       setLoading(false)
     }
   }
 
   const openAdd = () => { setEditing(null); setIsModalOpen(true) }
-  const openEdit = (s: Supplier) => { setEditing(s); setIsModalOpen(true) }
-  const openQuick = (s: Supplier) => { setSelected(s); setQuickViewOpen(true) }
+  const openEdit = (c: Customer) => { setEditing(c); setIsModalOpen(true) }
+  const openQuick = (c: Customer) => { setSelected(c); setQuickViewOpen(true) }
 
   async function handleSubmit(id: string | null, payload: any) {
     try {
-      const res = await fetch(id ? `/api/suppliers/${id}` : '/api/suppliers', {
+      const res = await fetch(id ? `/api/customers/${id}` : '/api/customers', {
         method: id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Request failed')
-      toast.success(id ? 'Supplier updated' : 'Supplier created')
+      toast.success(id ? 'Customer updated' : 'Customer created')
       setIsModalOpen(false)
-      fetchSuppliers(page, pageSize, debounced)
+      fetchCustomers(page, pageSize, debounced)
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to save supplier')
+      toast.error(e?.message || 'Failed to save customer')
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Deactivate this supplier?')) return
+    if (!confirm('Deactivate this customer?')) return
     try {
-      const res = await fetch(`/api/suppliers/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data?.error || 'Failed to deactivate')
       }
-      toast.success('Supplier deactivated')
-      fetchSuppliers(page, pageSize, debounced)
+      toast.success('Customer deactivated')
+      fetchCustomers(page, pageSize, debounced)
     } catch (e: any) {
       toast.error(e?.message || 'Failed to deactivate')
     }
@@ -145,11 +145,11 @@ export default function SuppliersPage() {
           <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Suppliers</h1>
-                <p className="mt-1 text-sm text-gray-500">Manage supplier directory and contacts</p>
+                <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
+                <p className="mt-1 text-sm text-gray-500">Manage your customers directory and contacts</p>
               </div>
               <button onClick={openAdd} className="btn-primary flex items-center">
-                <PlusIcon className="h-5 w-5 mr-2" /> Add Supplier
+                <PlusIcon className="h-5 w-5 mr-2" /> Add Customer
               </button>
             </div>
 
@@ -221,33 +221,33 @@ export default function SuppliersPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
                       <tr><td colSpan={6} className="table-cell text-center">Loading...</td></tr>
-                    ) : suppliers.length === 0 ? (
-                      <tr><td colSpan={6} className="table-cell text-center">No suppliers</td></tr>
+                    ) : customers.length === 0 ? (
+                      <tr><td colSpan={6} className="table-cell text-center">No customers</td></tr>
                     ) : (
-                      suppliers.map(s => (
-                        <tr key={s._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => openQuick(s)}>
+                      customers.map(c => (
+                        <tr key={c._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => openQuick(c)}>
                           <td className="table-cell">
-                            <div className="font-medium text-gray-900">{s.name}</div>
-                            <div className="text-xs text-gray-500">{s.contactPerson?.name}</div>
+                            <div className="font-medium text-gray-900">{c.name}</div>
+                            <div className="text-xs text-gray-500">{c.contactPerson?.name}</div>
                           </td>
-                          <td className="table-cell">{s.email}</td>
-                          <td className="table-cell">{s.phone}</td>
-                          <td className="table-cell">{s.address?.city}</td>
+                          <td className="table-cell">{c.email}</td>
+                          <td className="table-cell">{c.phone}</td>
+                          <td className="table-cell">{c.address?.city}</td>
                           <td className="table-cell">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${s.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>
-                              {s.isActive ? 'Active' : 'Inactive'}
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${c.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>
+                              {c.isActive ? 'Active' : 'Inactive'}
                             </span>
                           </td>
                           <td className="table-cell" onClick={(e) => e.stopPropagation()}>
                             <div className="flex gap-2">
-                              <button className="text-gray-600 hover:text-gray-800" onClick={(e) => { e.stopPropagation(); openQuick(s) }} title="Quick view">
+                              <button className="text-gray-600 hover:text-gray-800" onClick={(e) => { e.stopPropagation(); openQuick(c) }} title="Quick view">
                                 View
                               </button>
-                              <button className="text-blue-600 hover:text-blue-800" onClick={(e) => { e.stopPropagation(); openEdit(s) }} title="Edit">
+                              <button className="text-blue-600 hover:text-blue-800" onClick={(e) => { e.stopPropagation(); openEdit(c) }} title="Edit">
                                 <PencilIcon className="h-4 w-4" />
                               </button>
-                              {s.isActive && (
-                                <button className="btn-danger" onClick={(e) => { e.stopPropagation(); handleDelete(s._id) }} title="Deactivate">
+                              {c.isActive && (
+                                <button className="btn-danger" onClick={(e) => { e.stopPropagation(); handleDelete(c._id) }} title="Deactivate">
                                   <TrashIcon className="h-4 w-4" />
                                 </button>
                               )}
@@ -262,7 +262,7 @@ export default function SuppliersPage() {
 
               {/* Pagination */}
               <div className="flex items-center justify-between p-3">
-                <div className="text-sm text-gray-600">Page {page} of {totalPages} • {total} suppliers</div>
+                <div className="text-sm text-gray-600">Page {page} of {totalPages} • {total} customers</div>
                 <div className="flex items-center gap-2">
                   <button className="btn-secondary" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</button>
                   <button className="btn-secondary" disabled={page === totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Next</button>
@@ -273,23 +273,16 @@ export default function SuppliersPage() {
         </main>
       </div>
 
-      <SupplierModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        supplier={editing}
-        onSubmit={(id, data) => handleSubmit(id, data)}
-      />
-
       {/* Quick View Drawer */}
       <Dialog open={quickViewOpen} onClose={() => setQuickViewOpen(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex justify-end">
-          <Dialog.Panel className="h-full w-full max-w-full sm:max-w-md bg-white shadow-2xl border-l border-blue-100 flex flex-col" aria-label="Supplier quick view">
+          <Dialog.Panel className="h-full w-full max-w-full sm:max-w-md bg-white shadow-2xl border-l border-blue-100 flex flex-col" aria-label="Customer quick view">
             {/* Gradient header */}
             <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 via-indigo-600 to-fuchsia-600 px-4 sm:px-6 py-3 sm:py-4 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <Dialog.Title className="text-lg font-semibold tracking-wide">Supplier Details</Dialog.Title>
+                  <Dialog.Title className="text-lg font-semibold tracking-wide">Customer Details</Dialog.Title>
                   <p className="text-xs opacity-90">Quick view panel</p>
                 </div>
                 <button className="btn-secondary bg-white/15 hover:bg-white/25 text-white border-white/30" onClick={() => setQuickViewOpen(false)} aria-label="Close drawer">Close</button>
@@ -332,7 +325,7 @@ export default function SuppliersPage() {
                     </div>
                   </div>
 
-                  {/* Address & terms */}
+                  {/* Address */}
                   <div className="rounded-lg border border-fuchsia-100 bg-fuchsia-50/50 p-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
@@ -340,11 +333,6 @@ export default function SuppliersPage() {
                         <div>{selected.address?.street}</div>
                         <div>{selected.address?.city}, {selected.address?.state} {selected.address?.zipCode}</div>
                         <div>{selected.address?.country}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900 mb-2 flex items-center gap-2"><CreditCardIcon className="h-5 w-5 text-fuchsia-600" /> Payment</div>
-                        <div className="text-gray-800">Terms: {selected.paymentTerms || 'Net 30'}</div>
-                        <div className="text-gray-500 text-xs">Created: {selected.createdAt ? new Date(selected.createdAt).toLocaleDateString() : '-'}</div>
                       </div>
                     </div>
                   </div>
@@ -359,20 +347,27 @@ export default function SuppliersPage() {
                   </div>
                 </>
               ) : (
-                <div className="text-sm text-gray-600">No supplier selected.</div>
+                <div className="text-sm text-gray-600">No customer selected.</div>
               )}
             </div>
           </Dialog.Panel>
         </div>
       </Dialog>
+
+      <CustomerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        customer={editing}
+        onSubmit={(id, data) => handleSubmit(id, data)}
+      />
     </div>
   )
 }
 
-function SupplierModal({ isOpen, onClose, supplier, onSubmit }: {
+function CustomerModal({ isOpen, onClose, customer, onSubmit }: {
   isOpen: boolean
   onClose: () => void
-  supplier: Supplier | null
+  customer: Customer | null
   onSubmit: (id: string | null, data: any) => void
 }) {
   const [form, setForm] = useState({
@@ -381,46 +376,44 @@ function SupplierModal({ isOpen, onClose, supplier, onSubmit }: {
     phone: '',
     address: { street: '', city: '', state: '', zipCode: '', country: 'USA' },
     contactPerson: { name: '', email: '', phone: '' },
-    paymentTerms: 'Net 30',
     isActive: true,
     notes: '',
   })
 
   useEffect(() => {
-    if (supplier) {
+    if (customer) {
       setForm({
-        name: supplier.name || '',
-        email: supplier.email || '',
-        phone: supplier.phone || '',
+        name: customer.name || '',
+        email: customer.email || '',
+        phone: customer.phone || '',
         address: {
-          street: supplier.address?.street || '',
-          city: supplier.address?.city || '',
-          state: supplier.address?.state || '',
-          zipCode: supplier.address?.zipCode || '',
-          country: supplier.address?.country || 'USA',
+          street: customer.address?.street || '',
+          city: customer.address?.city || '',
+          state: customer.address?.state || '',
+          zipCode: customer.address?.zipCode || '',
+          country: customer.address?.country || 'USA',
         },
         contactPerson: {
-          name: supplier.contactPerson?.name || '',
-          email: supplier.contactPerson?.email || '',
-          phone: supplier.contactPerson?.phone || '',
+          name: customer.contactPerson?.name || '',
+          email: customer.contactPerson?.email || '',
+          phone: customer.contactPerson?.phone || '',
         },
-        paymentTerms: supplier.paymentTerms || 'Net 30',
-        isActive: supplier.isActive,
-        notes: supplier.notes || '',
+        isActive: customer.isActive,
+        notes: customer.notes || '',
       })
     } else {
       setForm({
         name: '', email: '', phone: '',
         address: { street: '', city: '', state: '', zipCode: '', country: 'USA' },
         contactPerson: { name: '', email: '', phone: '' },
-        paymentTerms: 'Net 30', isActive: true, notes: '',
+        isActive: true, notes: '',
       })
     }
-  }, [supplier])
+  }, [customer])
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(supplier?._id ?? null, form)
+    onSubmit(customer?._id ?? null, form)
   }
 
   return (
@@ -430,9 +423,9 @@ function SupplierModal({ isOpen, onClose, supplier, onSubmit }: {
         <Dialog.Panel className="mx-auto w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-blue-100">
           <div className="rounded-t-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-fuchsia-600 px-6 py-3 text-white">
             <Dialog.Title className="text-base md:text-lg font-semibold tracking-wide">
-              {supplier ? 'Edit Supplier' : 'Add Supplier'}
+              {customer ? 'Edit Customer' : 'Add Customer'}
             </Dialog.Title>
-            <p className="text-xs opacity-90">Maintain supplier contact and billing details</p>
+            <p className="text-xs opacity-90">Maintain customer contact and address details</p>
           </div>
 
           <form onSubmit={submit} className="px-6 py-5">
@@ -484,18 +477,6 @@ function SupplierModal({ isOpen, onClose, supplier, onSubmit }: {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Payment Terms</label>
-                <input className="input-field" value={form.paymentTerms} onChange={e => setForm({ ...form, paymentTerms: e.target.value })} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Active</label>
-                <select className="input-field" value={String(form.isActive)} onChange={e => setForm({ ...form, isActive: e.target.value === 'true' })}>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </div>
-
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
                 <textarea className="input-field" rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
@@ -504,7 +485,7 @@ function SupplierModal({ isOpen, onClose, supplier, onSubmit }: {
 
             <div className="mt-5 flex justify-end gap-3">
               <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-              <button type="submit" className="btn-primary">{supplier ? 'Update' : 'Add'} Supplier</button>
+              <button type="submit" className="btn-primary">{customer ? 'Update' : 'Add'} Customer</button>
             </div>
           </form>
         </Dialog.Panel>

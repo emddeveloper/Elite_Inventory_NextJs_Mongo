@@ -3,6 +3,7 @@ import dbConnect from '@/lib/mongodb'
 import Product from '@/models/Product'
 import Transaction from '@/models/Transaction'
 import InventoryLedger from '@/models/InventoryLedger'
+import Customer from '@/models/Customer'
 import { AUTH_COOKIE, decodeAuthCookie } from '@/lib/auth-cookie'
 
 function generateInvoiceNumber() {
@@ -115,6 +116,43 @@ export async function POST(request: NextRequest) {
 			discountPercent: Number(discountPercent) || 0,
 			total
 		})
+
+        // Upsert Customer based on transaction client
+        try {
+            const custEmail = String(client?.email || '').toLowerCase().trim()
+            if (custEmail) {
+                const customerPayload: any = {
+                    name: client.name || 'Unknown',
+                    email: custEmail,
+                    phone: client.whatsapp || 'N/A',
+                    address: {
+                        street: client.address || 'N/A',
+                        city: 'Unknown',
+                        state: 'Unknown',
+                        zipCode: '000000',
+                        country: 'Unknown',
+                    },
+                    contactPerson: {
+                        name: client.name || 'Unknown',
+                        email: custEmail,
+                        phone: client.whatsapp || 'N/A',
+                    },
+                    isActive: true,
+                    updatedAt: new Date(),
+                }
+                await Customer.findOneAndUpdate(
+                    { email: custEmail },
+                    {
+                        $setOnInsert: { createdAt: new Date() },
+                        $set: customerPayload,
+                    },
+                    { upsert: true, new: true }
+                )
+            }
+        } catch (e) {
+            console.error('Failed to upsert customer from sale:', e)
+            // continue; do not fail sale creation if customer upsert fails
+        }
 
 		// Write Inventory Ledger OUT entries per item
 		try {

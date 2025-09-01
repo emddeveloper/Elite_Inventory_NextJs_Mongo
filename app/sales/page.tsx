@@ -37,6 +37,10 @@ export default function SalesPage() {
 	const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
 	const [pdfFilename, setPdfFilename] = useState<string>('invoice.pdf')
 	const [currentUser, setCurrentUser] = useState<{ username: string; role: string } | null>(null)
+	// Suggestions for customer by phone
+	const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([])
+	const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+	const [showSuggestions, setShowSuggestions] = useState(false)
 
 	useEffect(() => {
 		loadProducts('')
@@ -51,6 +55,53 @@ export default function SalesPage() {
 			.catch(() => {})
 		return () => { mounted = false }
 	}, [])
+
+	// Auto-fill client by mobile/WhatsApp from Customers table + show suggestions dropdown
+	useEffect(() => {
+		const raw = (client.whatsapp || '').trim()
+		const digits = (s: string) => (s || '').replace(/\D/g, '')
+		const d = digits(raw)
+		if (!raw || d.length < 3) {
+			setCustomerSuggestions([])
+			return
+		}
+		const handle = setTimeout(async () => {
+			try {
+				setLoadingSuggestions(true)
+				const params = new URLSearchParams()
+				params.set('q', raw)
+				params.set('limit', '10')
+				params.set('status', 'active')
+				const res = await fetch(`/api/customers?${params.toString()}`)
+				const data = await res.json().catch(() => ({}))
+				if (!res.ok || !Array.isArray(data?.customers)) return
+				const list = data.customers.filter((c: any) => digits(c?.phone).includes(d))
+				setCustomerSuggestions(list.slice(0, 5))
+				setShowSuggestions(true)
+				// If we have an exact phone match (>=5 digits typed), auto-fill
+				if (d.length >= 5) {
+					const match = list.find((c: any) => digits(c?.phone) === d)
+					if (match) {
+						const fullAddress = [
+							match?.address?.street,
+							match?.address?.city,
+							match?.address?.state,
+							match?.address?.zipCode,
+							match?.address?.country,
+						].filter(Boolean).join(', ')
+						setClient(prev => ({
+							name: match?.name || prev.name,
+							address: fullAddress || prev.address,
+							email: match?.email || prev.email,
+							whatsapp: match?.phone || prev.whatsapp,
+						}))
+					}
+				}
+			} catch {}
+			finally { setLoadingSuggestions(false) }
+		}, 400)
+		return () => clearTimeout(handle)
+	}, [client.whatsapp])
 
 	// Sync content padding with sidebar collapsed state
 	useEffect(() => {
@@ -240,10 +291,51 @@ export default function SalesPage() {
 									<div className="card lg:col-span-1">
 										<h2 className="text-lg font-medium text-gray-900 mb-4">Client Details</h2>
 										<div className="space-y-4">
+											<div className="relative">
+												<input
+													className="input-field"
+													placeholder="Mobile / WhatsApp"
+													value={client.whatsapp}
+													autoComplete="off"
+													onChange={(e) => setClient({ ...client, whatsapp: e.target.value })}
+													onFocus={() => setShowSuggestions(customerSuggestions.length > 0)}
+													onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+												/>
+												{showSuggestions && customerSuggestions.length > 0 && (
+													<div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+														{customerSuggestions.map((c: any) => {
+															const addr = [c?.address?.street, c?.address?.city, c?.address?.state, c?.address?.zipCode, c?.address?.country].filter(Boolean).join(', ')
+															return (
+																<button
+																	key={c._id}
+																	type="button"
+																	className="w-full text-left px-3 py-2 hover:bg-gray-50"
+																	onMouseDown={(e) => e.preventDefault()}
+																	onClick={() => {
+																		setClient(prev => ({
+																			name: c?.name || prev.name,
+																			address: addr || prev.address,
+																			email: c?.email || prev.email,
+																			whatsapp: c?.phone || prev.whatsapp,
+																		}))
+																		setShowSuggestions(false)
+																	}}
+																>
+																	<div className="text-sm font-medium text-gray-900">{c?.name || 'Unknown'} <span className="text-gray-500">• {c?.phone}</span></div>
+																	<div className="text-xs text-gray-500 truncate">{c?.email}</div>
+																	{addr && (<div className="text-xs text-gray-500 truncate">{addr}</div>)}
+																</button>
+															)
+														})}
+														{loadingSuggestions && (
+															<div className="px-3 py-2 text-xs text-gray-500">Searching…</div>
+														)}
+													</div>
+												)}
+											</div>
 											<input className="input-field" placeholder="Name" value={client.name} onChange={(e) => setClient({ ...client, name: e.target.value })} />
 											<textarea className="input-field" placeholder="Address" rows={3} value={client.address} onChange={(e) => setClient({ ...client, address: e.target.value })} />
 											<input className="input-field" placeholder="Email" type="email" value={client.email} onChange={(e) => setClient({ ...client, email: e.target.value })} />
-											<input className="input-field" placeholder="WhatsApp" value={client.whatsapp} onChange={(e) => setClient({ ...client, whatsapp: e.target.value })} />
 										</div>
 									</div>
 
@@ -251,26 +343,26 @@ export default function SalesPage() {
 									<div className="card lg:col-span-2">
 										<div className="flex items-center justify-between mb-4">
 											<h2 className="text-lg font-medium text-gray-900">Add Products</h2>
-											<div className="flex w-full sm:w-auto sm:flex-none sm:items-center gap-2 sm:justify-end flex-col sm:flex-row">
-												<div className="relative w-full sm:w-80">
-													<MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-													<input className="input-field pl-10 pr-10 w-full" placeholder="Search products..." value={query} onChange={(e) => { setQuery(e.target.value); loadProducts(e.target.value) }} />
-													{query && (
-														<button
-															type="button"
-															className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
-															aria-label="Clear search"
-															onClick={() => { setQuery(''); loadProducts('') }}
-														>
-															<XMarkIcon className="h-5 w-5" />
-														</button>
-													)}
-												</div>
-												<button type="button" className="btn-secondary flex items-center w-full sm:w-auto justify-center" title="Scan to search" onClick={() => setScanOpen(true)}>
-													<QrCodeIcon className="h-5 w-5 mr-2" />
-													Scan
-												</button>
+										</div>
+										<div className="flex items-center gap-3">
+											<div className="relative w-full sm:w-80 mb-3">
+												<MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+												<input className="input-field pl-10 pr-10 w-full" placeholder="Search products..." value={query} onChange={(e) => { setQuery(e.target.value); loadProducts(e.target.value) }} />
+												{query && (
+													<button
+														type="button"
+														className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+														aria-label="Clear search"
+														onClick={() => { setQuery(''); loadProducts('') }}
+													>
+														<XMarkIcon className="h-5 w-5" />
+													</button>
+												)}
 											</div>
+											<button type="button" className="btn-secondary flex items-center justify-center mb-3" title="Scan to search" onClick={() => setScanOpen(true)}>
+												<QrCodeIcon className="h-5 w-5 mr-2" />
+												Scan
+											</button>
 										</div>
 										<div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-auto">
 											{loadingProducts ? (
