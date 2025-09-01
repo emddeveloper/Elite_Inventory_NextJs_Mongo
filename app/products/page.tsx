@@ -42,6 +42,7 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [debouncedTerm, setDebouncedTerm] = useState('')
   const [aborter, setAborter] = useState<AbortController | null>(null)
+  const [showSupplierColumn, setShowSupplierColumn] = useState<boolean>(true)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -60,6 +61,19 @@ export default function ProductsPage() {
     }, 350)
     return () => clearTimeout(t)
   }, [searchTerm])
+
+  useEffect(() => {
+    // load persisted toggle
+    try {
+      const saved = localStorage.getItem('ui.products.showSupplierColumn')
+      if (saved != null) setShowSupplierColumn(saved === 'true')
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    // persist toggle
+    try { localStorage.setItem('ui.products.showSupplierColumn', String(showSupplierColumn)) } catch {}
+  }, [showSupplierColumn])
 
   // Fetch products when debounced term or category changes, with cancellation
   useEffect(() => {
@@ -269,13 +283,19 @@ export default function ProductsPage() {
               {/* Products table */}
               <div className="card">
                 <div className="overflow-x-auto">
+                  <div className="flex items-center justify-end p-2">
+                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                      <input type="checkbox" className="rounded border-gray-300" checked={showSupplierColumn} onChange={(e) => setShowSupplierColumn(e.target.checked)} />
+                      Show Supplier column
+                    </label>
+                  </div>
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="table-header">Product</th>
                         <th className="table-header">SKU</th>
                         <th className="table-header">Category</th>
-                        <th className="table-header">Supplier</th>
+                        {showSupplierColumn && <th className="table-header">Supplier</th>}
                         <th className="table-header">Price</th>
                         <th className="table-header">GST %</th>
                         <th className="table-header">Quantity</th>
@@ -308,7 +328,9 @@ export default function ProductsPage() {
                             </td>
                             <td className="table-cell font-mono">{product.sku}</td>
                             <td className="table-cell">{product.category}</td>
-                            <td className="table-cell">{product.supplier?.name || '-'}</td>
+                            {showSupplierColumn && (
+                              <td className="table-cell">{product.supplier?.name || '-'}</td>
+                            )}
                             <td className="table-cell">₹{product.price.toFixed(2)}</td>
                             <td className="table-cell">{product.gstPercent ?? 5}%</td>
                             <td className="table-cell">{product.quantity}</td>

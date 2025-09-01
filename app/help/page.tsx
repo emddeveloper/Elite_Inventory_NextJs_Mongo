@@ -62,9 +62,10 @@ const sections: { key: string; title: string; steps: string[] }[] = [
     title: 'Suppliers',
     steps: [
       'Manage your supplier directory including contact and billing details.',
-      'Search suppliers by name, email, phone, or city. Pagination keeps lists responsive.',
+      'Search suppliers by name, email, phone, or city. Use Sort (Name/City/Status) and Order (Asc/Desc) controls. Filter by Status: Active, Inactive, or All. Note: On mobile, the Asc/Desc selector is hidden to save space; adjust order on larger screens if needed.',
       'Add or edit suppliers with address and contact person details. You can also deactivate a supplier.',
-      'When adding or editing products, you can optionally assign a supplier (shown in the Products list).'
+      'Click a supplier name to open a Quick View drawer with full details and quick actions (Edit/Deactivate).',
+      'When adding or editing products, you can optionally assign a supplier. The Products table has a toggle to show/hide the Supplier column (saved to your device).'
     ],
   },
   {

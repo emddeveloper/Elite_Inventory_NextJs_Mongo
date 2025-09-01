@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Dialog } from '@headlessui/react'
-import { PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, UserIcon, DocumentTextIcon, CreditCardIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
@@ -50,6 +50,8 @@ export default function SuppliersPage() {
   const [sortBy, setSortBy] = useState<'name' | 'city' | 'isActive'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active')
+  const [quickViewOpen, setQuickViewOpen] = useState(false)
+  const [selected, setSelected] = useState<Supplier | null>(null)
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search.trim()), 300)
@@ -86,6 +88,7 @@ export default function SuppliersPage() {
 
   const openAdd = () => { setEditing(null); setIsModalOpen(true) }
   const openEdit = (s: Supplier) => { setEditing(s); setIsModalOpen(true) }
+  const openQuick = (s: Supplier) => { setSelected(s); setQuickViewOpen(true) }
 
   async function handleSubmit(id: string | null, payload: any) {
     try {
@@ -143,13 +146,13 @@ export default function SuppliersPage() {
                 <input
                   value={search}
                   onChange={(e) => { setPage(1); setSearch(e.target.value) }}
-                  className="input-field pl-10 w-full"
+                  className="input-field pl-10 w-full text-sm sm:text-base h-9 sm:h-10"
                   placeholder="Search by name, email, phone, or city"
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-xs sm:text-sm">
                 <select
-                  className="input-field w-36"
+                  className="input-field w-28 sm:w-36 h-8 sm:h-10 py-1"
                   value={sortBy}
                   onChange={(e) => { setPage(1); setSortBy(e.target.value as any) }}
                   title="Sort By"
@@ -159,7 +162,7 @@ export default function SuppliersPage() {
                   <option value="isActive">Sort: Status</option>
                 </select>
                 <select
-                  className="input-field w-36"
+                  className="input-field w-28 sm:w-36 h-8 sm:h-10 py-1"
                   value={statusFilter}
                   onChange={(e) => { setPage(1); setStatusFilter(e.target.value as any) }}
                   title="Status"
@@ -169,7 +172,7 @@ export default function SuppliersPage() {
                   <option value="all">All</option>
                 </select>
                 <select
-                  className="input-field w-28"
+                  className="input-field w-24 sm:w-28 h-8 sm:h-10 py-1 hidden sm:block"
                   value={sortOrder}
                   onChange={(e) => { setPage(1); setSortOrder(e.target.value as any) }}
                   title="Order"
@@ -178,7 +181,7 @@ export default function SuppliersPage() {
                   <option value="desc">Desc</option>
                 </select>
                 <select
-                  className="input-field w-28"
+                  className="input-field w-24 sm:w-28 h-8 sm:h-10 py-1"
                   value={pageSize}
                   onChange={(e) => { setPage(1); setPageSize(parseInt(e.target.value, 10)) }}
                 >
@@ -208,7 +211,7 @@ export default function SuppliersPage() {
                       <tr><td colSpan={6} className="table-cell text-center">No suppliers</td></tr>
                     ) : (
                       suppliers.map(s => (
-                        <tr key={s._id} className="hover:bg-gray-50">
+                        <tr key={s._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => openQuick(s)}>
                           <td className="table-cell">
                             <div className="font-medium text-gray-900">{s.name}</div>
                             <div className="text-xs text-gray-500">{s.contactPerson?.name}</div>
@@ -221,13 +224,16 @@ export default function SuppliersPage() {
                               {s.isActive ? 'Active' : 'Inactive'}
                             </span>
                           </td>
-                          <td className="table-cell">
+                          <td className="table-cell" onClick={(e) => e.stopPropagation()}>
                             <div className="flex gap-2">
-                              <button className="text-blue-600 hover:text-blue-800" onClick={() => openEdit(s)} title="Edit">
+                              <button className="text-gray-600 hover:text-gray-800" onClick={(e) => { e.stopPropagation(); openQuick(s) }} title="Quick view">
+                                View
+                              </button>
+                              <button className="text-blue-600 hover:text-blue-800" onClick={(e) => { e.stopPropagation(); openEdit(s) }} title="Edit">
                                 <PencilIcon className="h-4 w-4" />
                               </button>
                               {s.isActive && (
-                                <button className="text-red-600 hover:text-red-800" onClick={() => handleDelete(s._id)} title="Deactivate">
+                                <button className="btn-danger" onClick={(e) => { e.stopPropagation(); handleDelete(s._id) }} title="Deactivate">
                                   <TrashIcon className="h-4 w-4" />
                                 </button>
                               )}
@@ -259,6 +265,92 @@ export default function SuppliersPage() {
         supplier={editing}
         onSubmit={(id, data) => handleSubmit(id, data)}
       />
+
+      {/* Quick View Drawer */}
+      <Dialog open={quickViewOpen} onClose={() => setQuickViewOpen(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex justify-end">
+          <Dialog.Panel className="h-full w-full max-w-full sm:max-w-md bg-white shadow-2xl border-l border-blue-100 flex flex-col" aria-label="Supplier quick view">
+            {/* Gradient header */}
+            <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 via-indigo-600 to-fuchsia-600 px-4 sm:px-6 py-3 sm:py-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Dialog.Title className="text-lg font-semibold tracking-wide">Supplier Details</Dialog.Title>
+                  <p className="text-xs opacity-90">Quick view panel</p>
+                </div>
+                <button className="btn-secondary bg-white/15 hover:bg-white/25 text-white border-white/30" onClick={() => setQuickViewOpen(false)} aria-label="Close drawer">Close</button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-sm">
+              {selected ? (
+                <>
+                  {/* Name & status card */}
+                  <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <UserIcon className="h-5 w-5 text-blue-600" />
+                        <div className="font-medium text-gray-900">{selected.name}</div>
+                      </div>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${selected.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>
+                        {selected.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    {selected.notes && (
+                      <div className="mt-2 flex items-start gap-2 text-gray-700">
+                        <DocumentTextIcon className="h-4 w-4 mt-0.5 text-blue-600" />
+                        <div className="whitespace-pre-wrap">{selected.notes}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contact card */}
+                  <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-4">
+                    <div className="font-medium text-gray-900 mb-2 flex items-center gap-2"><EnvelopeIcon className="h-5 w-5 text-emerald-600" /> Contact</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2 text-gray-800"><EnvelopeIcon className="h-4 w-4 text-emerald-600" /> {selected.email}</div>
+                      <div className="flex items-center gap-2 text-gray-800"><PhoneIcon className="h-4 w-4 text-emerald-600" /> {selected.phone}</div>
+                      <div className="sm:col-span-2 text-gray-700">
+                        <div className="text-xs text-gray-500">Contact Person</div>
+                        <div className="font-medium">{selected.contactPerson?.name}</div>
+                        <div className="text-gray-700">{selected.contactPerson?.email} • {selected.contactPerson?.phone}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Address & terms */}
+                  <div className="rounded-lg border border-fuchsia-100 bg-fuchsia-50/50 p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <div className="font-medium text-gray-900 mb-2 flex items-center gap-2"><MapPinIcon className="h-5 w-5 text-fuchsia-600" /> Address</div>
+                        <div>{selected.address?.street}</div>
+                        <div>{selected.address?.city}, {selected.address?.state} {selected.address?.zipCode}</div>
+                        <div>{selected.address?.country}</div>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900 mb-2 flex items-center gap-2"><CreditCardIcon className="h-5 w-5 text-fuchsia-600" /> Payment</div>
+                        <div className="text-gray-800">Terms: {selected.paymentTerms || 'Net 30'}</div>
+                        <div className="text-gray-500 text-xs">Created: {selected.createdAt ? new Date(selected.createdAt).toLocaleDateString() : '-'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-1 flex gap-2">
+                    <button className="btn-primary" onClick={() => { setQuickViewOpen(false); openEdit(selected) }}>Edit</button>
+                    {selected.isActive && (
+                      <button className="btn-secondary text-red-600" onClick={() => { setQuickViewOpen(false); handleDelete(selected._id) }}>Deactivate</button>
+                    )}
+                    <button className="btn-secondary" onClick={() => setQuickViewOpen(false)}>Close</button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-gray-600">No supplier selected.</div>
+              )}
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </div>
   )
 }
