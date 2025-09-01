@@ -9,6 +9,7 @@ import { generateInvoicePDF, getDefaultCompany } from '@/lib/pdf-utils'
 import { Dialog } from '@headlessui/react'
 import Scanner from '@/components/Scanner'
 import PdfViewerModal from '@/components/PdfViewerModal'
+import { triggerSuccessFeedback } from '@/lib/feedback'
 
 type Product = {
 	_id: string
@@ -122,6 +123,7 @@ export default function SalesPage() {
 			const data = await res.json()
 			if (res.ok) {
 				toast.success('Sale completed')
+				try { triggerSuccessFeedback() } catch {}
 				// Generate invoice PDF and open viewer modal
 				try {
 					const company = getDefaultCompany()

@@ -40,7 +40,8 @@ const sections: { key: string; title: string; steps: string[] }[] = [
     steps: [
       'Create a new sale by selecting products (scan or search).',
       'Adjust quantities and verify totals before saving.',
-      'Stock reduces automatically and ledger entries are created.'
+      'Stock reduces automatically and ledger entries are created.',
+      'After a sale is completed, your device vibrates and a short success tune plays (follows global sound/vibration settings).'
     ],
   },
   {
@@ -153,6 +154,7 @@ export default function HelpPage() {
             <li><span className="font-semibold">Search fast:</span> Use the top search bar to find products by name or SKU.</li>
             <li><span className="font-semibold">Scan barcodes:</span> Click the QR icon near the search input to open the scanner.</li>
             <li><span className="font-semibold">Scan feedback:</span> On success, your device vibrates and a short success tune plays (sound can be disabled).</li>
+            <li><span className="font-semibold">Global feedback toggles:</span> Open the user menu (top-right) and use <em>Feedback Settings</em> to enable/disable Sound and Vibration globally.</li>
             <li><span className="font-semibold">Low stock alerts:</span> Open the bell icon to see items that need restocking.</li>
           </ul>
         </div>

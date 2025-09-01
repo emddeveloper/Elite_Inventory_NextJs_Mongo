@@ -5,6 +5,7 @@ import { Bars3Icon, BellIcon, MagnifyingGlassIcon, QrCodeIcon, XMarkIcon, Questi
 import { UserCircleIcon } from '@heroicons/react/24/solid'
 import { useRouter } from 'next/navigation'
 import Scanner from '@/components/Scanner'
+import { getFeedbackSettings, setFeedbackSettings, subscribeFeedbackSettings, type FeedbackSettings } from '@/lib/user-settings'
 
 export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => void }) {
   const [lowStock, setLowStock] = useState<any[]>([])
@@ -26,6 +27,8 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
   // Desktop clock
   const [now, setNow] = useState<Date | null>(null)
   const [backupLoading, setBackupLoading] = useState(false)
+  // Feedback (sound/vibration) settings
+  const [fb, setFb] = useState<FeedbackSettings>({ soundEnabled: true, vibrationEnabled: true })
 
   // Poll low-stock products every 10s
   useEffect(() => {
@@ -43,6 +46,13 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
     fetchLow()
     const iv = setInterval(fetchLow, 10000)
     return () => { mounted = false; clearInterval(iv) }
+  }, [])
+
+  // Load feedback settings and subscribe to changes
+  useEffect(() => {
+    try { setFb(getFeedbackSettings()) } catch {}
+    const unsub = subscribeFeedbackSettings((s) => setFb(s))
+    return () => { try { unsub() } catch {} }
   }, [])
 
   // Debounced global search
@@ -335,6 +345,25 @@ export default function Header({ setSidebarOpen }: { setSidebarOpen: (open: bool
               {openUserMenu && (
                 <div className="absolute right-0 top-full w-48 rounded-md bg-white shadow ring-1 ring-gray-900/5 py-1">
                   <div className="px-3 py-2 text-xs text-gray-500 border-b">Logged in for: <span className="font-medium text-gray-700">{loginDuration || '—'}</span></div>
+                  <div className="px-3 py-2 border-b">
+                    <div className="text-xs font-medium text-gray-500 mb-2">Feedback Settings</div>
+                    <label className="flex items-center justify-between gap-3 py-1">
+                      <span className="text-sm text-gray-700">Sound</span>
+                      <input
+                        type="checkbox"
+                        checked={fb.soundEnabled}
+                        onChange={(e) => setFeedbackSettings({ soundEnabled: e.target.checked })}
+                      />
+                    </label>
+                    <label className="flex items-center justify-between gap-3 py-1">
+                      <span className="text-sm text-gray-700">Vibration</span>
+                      <input
+                        type="checkbox"
+                        checked={fb.vibrationEnabled}
+                        onChange={(e) => setFeedbackSettings({ vibrationEnabled: e.target.checked })}
+                      />
+                    </label>
+                  </div>
                   <button
                     onClick={() => { setOpenUserMenu(false); router.push('/profile') }}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
