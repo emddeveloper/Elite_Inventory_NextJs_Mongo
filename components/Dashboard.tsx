@@ -152,53 +152,60 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
-        {data.stats.map((item) => (
-          <div key={item.name} className="overflow-hidden rounded-xl border border-primary-100 bg-white/80 backdrop-blur shadow-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  {item.name === 'Total Products' && <CubeIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
-                  {item.name === 'Total Value' && <CurrencyRupeeIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
-                  {item.name === 'Low Stock Items' && <ExclamationTriangleIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
-                  {item.name === 'Monthly Sales' && <ArrowTrendingUpIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
-                  {item.name === 'Daily Sales' && <CurrencyRupeeIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />}
+      {/* Stats (cards) */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {data.stats.map((item) => {
+          const money = item.name === 'Total Value' || item.name === 'Monthly Sales' || item.name === 'Daily Sales'
+          const value = (() => {
+            const s = String(item.stat ?? '').trim()
+            if (!money) return s || '—'
+            if (!s) return '₹0.00'
+            if (s.startsWith('₹')) return s
+            if (s.startsWith('$')) return s.replace(/^\$\s?/, '₹')
+            return `₹${s}`
+          })()
+          const badge = item.changeType === 'increase'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'
+          const Icon = item.name === 'Total Products' ? CubeIcon
+                      : item.name === 'Total Value' ? CurrencyRupeeIcon
+                      : item.name === 'Low Stock Items' ? ExclamationTriangleIcon
+                      : item.name === 'Monthly Sales' ? ArrowTrendingUpIcon
+                      : CurrencyRupeeIcon
+          return (
+            <div key={item.name} className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              {/* Header */}
+              <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <Icon className="h-4 w-4 text-gray-600" />
+                  </div>
+                  <div className="text-sm font-medium text-gray-900">{item.name}</div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">{item.name}</dt>
-                    <dd>
-                      <div className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 via-fuchsia-600 to-violet-600">
-                        {(() => {
-                          const s = String(item.stat).trim()
-                          const money = item.name === 'Total Value' || item.name === 'Monthly Sales' || item.name === 'Daily Sales'
-                          if (!money) return item.stat
-                          if (s.startsWith('₹')) return s
-                          if (s.startsWith('$')) return s.replace(/^\$\s?/, '₹')
-                          return `₹${s}`
-                        })()}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
+                <button className="p-1 text-gray-400 hover:text-gray-600" aria-label="More">
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm4 2a2 2 0 100-4 2 2 0 000 4z"/></svg>
+                </button>
               </div>
-              <div className="mt-4">
-                <div className={`flex items-center text-sm ${
-                  item.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {item.changeType === 'increase' ? (
-                    <ArrowTrendingUpIcon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-                  ) : (
-                    <ArrowTrendingDownIcon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-                  )}
-                  <span className="ml-1">{item.change}</span>
-                  <span className="ml-1 text-gray-500">from last month</span>
-                </div>
+              <div className="px-4">
+                <div className="border-t border-gray-100"></div>
+              </div>
+              {/* Info row */}
+              <div className="px-4 pt-3 text-sm text-gray-600 flex items-center justify-between">
+                <span className="text-gray-500">Change</span>
+                <span className="text-gray-500">from last month</span>
+              </div>
+              {/* Value row */}
+              <div className="px-4 pb-4 pt-1 flex items-center justify-between">
+                <div className="text-lg font-semibold text-gray-900">{value}</div>
+                {item.change && (
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${badge}`}>
+                    {item.changeType === 'increase' ? 'Increase' : 'Decrease'} {item.change}
+                  </span>
+                )}
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Charts (code-split) */}

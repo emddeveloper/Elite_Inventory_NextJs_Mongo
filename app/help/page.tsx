@@ -10,6 +10,8 @@ const sections: { key: string; title: string; steps: string[] }[] = [
     title: 'Dashboard Overview',
     steps: [
       'See key KPIs like total products, low stock alerts, and recent activity.',
+      'KPI cards have a rounded design with a header (icon + title), a thin divider, and a value row. A colored badge shows Increase/Decrease and the delta from last month. All currency values are shown in Indian Rupees (₹).',
+      'Recent Activity shows grouped entries (Today/Yesterday/date) with amount, status badge, optional tax line, and party details. Clicking the amount or “View transaction” opens the Transactions page filtered by the invoice number using ?q=INVOICE_NUMBER (falls back to transaction ID if invoice is missing).',
       'Click any metric card to navigate to its related module for deeper details.',
       'Use the global search bar (top) to quickly find products by name or SKU.'
     ],
