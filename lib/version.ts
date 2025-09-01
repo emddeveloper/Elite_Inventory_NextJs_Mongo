@@ -7,6 +7,20 @@ export type VersionEntry = {
 // IMPORTANT: Update this on every user-visible change. Keep the latest at the top.
 export const versionHistory: VersionEntry[] = [
   {
+    version: '1.1.2',
+    date: new Date().toISOString(),
+    changes: [
+      'UI: Darker table header text for improved readability',
+    ],
+  },
+  {
+    version: '1.1.1',
+    date: new Date().toISOString(),
+    changes: [
+      'UI: Darker placeholder text for input fields for improved readability',
+    ],
+  },
+  {
     version: '1.1.0',
     date: new Date().toISOString(),
     changes: [

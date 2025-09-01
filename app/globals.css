@@ -29,11 +29,11 @@
   }
   
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-200 rounded-lg bg-white/80 backdrop-blur placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-3 py-2 border border-gray-200 rounded-lg bg-white/80 backdrop-blur placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
   }
   
   .table-header {
-    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-800 uppercase tracking-wider;
   }
   
   .table-cell {
