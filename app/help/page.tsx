@@ -174,6 +174,7 @@ export default function HelpPage() {
             <li><span className="font-semibold">Currency display:</span> All monetary amounts in the UI and generated invoices are shown in Indian Rupees (₹).</li>
             <li><span className="font-semibold">Paginate results:</span> Use the bottom controls to change page and items per page for large product lists.</li>
             <li><span className="font-semibold">Low stock alerts:</span> Open the bell icon to see items that need restocking.</li>
+            <li><span className="font-semibold">Mobile account & logout:</span> Open the mobile menu to see your account (name/role) at the bottom and use the Logout button.</li>
           </ul>
         </div>
       </div>

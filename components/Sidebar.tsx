@@ -16,9 +16,10 @@ import {
   ChevronRightIcon,
   QrCodeIcon,
 } from '@heroicons/react/24/outline'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { SparklesIcon } from '@heroicons/react/24/solid'
+import company from '@/company.json'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
@@ -40,8 +41,10 @@ function classNames(...classes: string[]) {
 
 export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const pathname = usePathname()
+  const router = useRouter()
   // null means loading; [] means unrestricted (e.g., admin) or no menus assigned
   const [menus, setMenus] = useState<string[] | null>(null)
+  const [user, setUser] = useState<{ username: string; role: string } | null>(null)
   const [collapsed, setCollapsed] = useState<boolean>(false)
 
   useEffect(() => {
@@ -51,8 +54,9 @@ export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (op
       .then(({ user }) => {
         if (!mounted) return
         setMenus(user?.menus ?? [])
+        setUser(user ? { username: user.username, role: user.role } : null)
       })
-      .catch(() => setMenus([]))
+      .catch(() => { setMenus([]); setUser(null) })
     return () => {
       mounted = false
     }
@@ -127,11 +131,12 @@ export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (op
                     </button>
                   </div>
                 </Transition.Child>
-                <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-primary-50/80 via-fuchsia-50/70 to-emerald-50/70 backdrop-blur-xl px-6 pb-4 border-r border-primary-100">
+                <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-[#0b1430] via-[#0a1230] to-[#070e24] px-6 pb-4 border-r border-blue-900 text-gray-200">
                   <div className="flex h-20 shrink-0 items-center">
                     <Link href="/" className="group outline-none">
                       <div>
-                        <h1 className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 via-fuchsia-600 to-violet-700 group-hover:from-primary-800 group-hover:via-fuchsia-700 group-hover:to-violet-800">Elite Inventory Manager</h1>
+                        <h1 className="text-xl mt-5 font-extrabold text-white">Elite Inventory Manager</h1>
+                        <p className="text-xs text-blue-200/90 mt-0.5">{company?.name}</p>
                         <div className="mt-2 inline-flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-primary-600 via-fuchsia-600 to-violet-600 shadow-md">
                           <SparklesIcon className="h-5 w-5 text-white" />
                         </div>
@@ -148,14 +153,14 @@ export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (op
                                 href={item.href}
                                 className={classNames(
                                   pathname === item.href
-                                    ? 'bg-primary-50/70 text-primary-700 border border-primary-100'
-                                    : 'text-gray-700 hover:text-primary-700 hover:bg-primary-50/60',
+                                    ? 'bg-blue-600/90 text-white border border-blue-500/40'
+                                    : 'text-gray-200 hover:text-white hover:bg-white/10',
                                   'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors'
                                 )}
                               >
                                 <item.icon
                                   className={classNames(
-                                    pathname === item.href ? 'text-primary-700' : 'text-gray-400 group-hover:text-primary-700',
+                                    pathname === item.href ? 'text-white' : 'text-gray-400 group-hover:text-white',
                                     'h-6 w-6 shrink-0'
                                   )}
                                   aria-hidden="true"
@@ -168,6 +173,24 @@ export default function Sidebar({ open, setOpen }: { open: boolean; setOpen: (op
                       </li>
                     </ul>
                   </nav>
+                  {user && (
+                    <div className="mt-auto pt-3 border-t border-white/10">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-white">{user.username}</div>
+                          <div className="text-xs text-blue-200/80">{user.role}</div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            try { await fetch('/api/auth/logout', { method: 'POST' }) } finally { setOpen(false); router.replace('/login') }
+                          }}
+                          className="btn-secondary bg-white/10 hover:bg-white/20 text-white border border-white/10 px-3 py-1.5 rounded-md text-sm"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Dialog.Panel>
             </Transition.Child>
